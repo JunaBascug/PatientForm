@@ -17,13 +17,13 @@
             margin-bottom: 10px;
         }
 
-        /* TOP BAR */
         .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .search-box {
@@ -49,7 +49,7 @@
             font-size: 12px;
         }
 
-        .new-btn {
+        .new-btn, .dash-btn {
             padding: 7px 12px;
             background: #4CAF50;
             color: white;
@@ -57,9 +57,13 @@
             border-radius: 5px;
             font-weight: bold;
             font-size: 12px;
+            margin-left: 5px;
         }
 
-        /* TABLE */
+        .dash-btn {
+            background: #2196F3;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -75,7 +79,6 @@
             color: white;
             padding: 8px;
             text-align: left;
-            font-size: 12px;
         }
 
         td {
@@ -88,7 +91,6 @@
             background: #f9f9f9;
         }
 
-        /* BUTTONS */
         .btn {
             padding: 3px 6px;
             border-radius: 4px;
@@ -105,7 +107,6 @@
 
         .field {
             margin-bottom: 2px;
-            line-height: 1.2em;
         }
 
         .patient-name {
@@ -115,6 +116,7 @@
         input.edit-input {
             font-size: 12px;
             padding: 3px;
+            display: none;
         }
     </style>
 </head>
@@ -123,17 +125,17 @@
 
 <h2>Visit Details</h2>
 
-<!-- TOP BAR -->
 <div class="top-bar">
 
-    <!-- SEARCH -->
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="Search Patient Name..." onkeyup="searchPatient()">
         <button onclick="clearSearch()">Clear</button>
     </div>
 
-    <!-- ✅ FIXED NEW PATIENT BUTTON -->
-    <a href="/form" class="new-btn">+ New Patient</a>
+    <div>
+        <a href="/form" class="new-btn">+ New Patient</a>
+        <a href="/dashboard" class="dash-btn">Dashboard</a>
+    </div>
 
 </div>
 
@@ -150,84 +152,54 @@
     {% for d in data %}
     <tr id="row-{{ d['id'] }}">
 
-        <!-- PATIENT INFO -->
         <td>
-            <div class="field">
-                <b>Name:</b>
-                <span class="patient-name">{{ d['patient'] or '' }}</span>
-                <input class="edit-input" type="text" value="{{ d['patient'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Name:</b> <span class="patient-name">{{ d['patient'] or '' }}</span></div>
+            <input class="edit-input" type="text" value="{{ d['patient'] or '' }}">
 
-            <div class="field">
-                <b>DOB:</b>
-                <input class="edit-input" type="date" value="{{ d['dob'] or '' }}" style="display:none;">
-            </div>
+            <div><b>DOB:</b></div>
+            <input class="edit-input" type="date" value="{{ d['dob'] or '' }}">
 
-            <div class="field">
-                <b>Status:</b>
-                <input class="edit-input" type="text" value="{{ d['status'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Status:</b></div>
+            <input class="edit-input" type="text" value="{{ d['status'] or '' }}">
 
-            <div class="field">
-                <b>Work:</b>
-                <input class="edit-input" type="text" value="{{ d['work_type'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Work:</b></div>
+            <input class="edit-input" type="text" value="{{ d['work_type'] or '' }}">
 
-            <div class="field">
-                <b>Hobbies:</b>
-                <input class="edit-input" type="text" value="{{ d['hobbies'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Hobbies:</b></div>
+            <input class="edit-input" type="text" value="{{ d['hobbies'] or '' }}">
         </td>
 
-        <!-- MEDICAL INFO -->
         <td>
-            <div class="field">
-                <b>Medical Ins:</b>
-                <input class="edit-input" type="text" value="{{ d['medical_insurance'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Medical:</b></div>
+            <input class="edit-input" type="text" value="{{ d['medical_insurance'] or '' }}">
 
-            <div class="field">
-                <b>Accepted:</b>
-                <input class="edit-input" type="text" value="{{ d['medical_insurance_accepted'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Accepted:</b></div>
+            <input class="edit-input" type="text" value="{{ d['medical_insurance_accepted'] or '' }}">
         </td>
 
-        <!-- VISION INFO -->
         <td>
-            <div class="field">
-                <b>Vision Goals:</b>
-                <input class="edit-input" type="text" value="{{ d['vision_goals'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Goals:</b></div>
+            <input class="edit-input" type="text" value="{{ d['vision_goals'] or '' }}">
 
-            <div class="field">
-                <b>Vision Ins:</b>
-                <input class="edit-input" type="text" value="{{ d['vision_insurance'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Vision:</b></div>
+            <input class="edit-input" type="text" value="{{ d['vision_insurance'] or '' }}">
 
-            <div class="field">
-                <b>VSP:</b>
-                <input class="edit-input" type="text" value="{{ d['vsp_essential_eye_care'] or '' }}" style="display:none;">
-            </div>
+            <div><b>VSP:</b></div>
+            <input class="edit-input" type="text" value="{{ d['vsp_essential_eye_care'] or '' }}">
         </td>
 
-        <!-- VISIT INFO -->
         <td>
-            <div class="field">
-                <b>Reason:</b>
-                <input class="edit-input" type="text" value="{{ d['reason'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Reason:</b></div>
+            <input class="edit-input" type="text" value="{{ d['reason'] or '' }}">
 
-            <div class="field">
-                <b>Date:</b>
-                <input class="edit-input" type="date" value="{{ d['date'] or '' }}" style="display:none;">
-            </div>
+            <div><b>Date:</b></div>
+            <input class="edit-input" type="date" value="{{ d['date'] or '' }}">
         </td>
 
-        <!-- ACTIONS -->
         <td>
             <button class="btn edit" onclick="editRow({{ d['id'] }})">Edit</button>
             <button class="btn save" style="display:none;" onclick="saveRow({{ d['id'] }})">Save</button>
-            <button class="btn cancel" style="display:none;" onclick="cancelRow({{ d['id'] }})">Cancel</button>
+            <button class="btn cancel" style="display:none;" onclick="cancelRow()">Cancel</button>
             <button class="btn delete" onclick="deleteRow({{ d['id'] }})">Delete</button>
         </td>
 
@@ -239,15 +211,14 @@
 <script>
 function editRow(id) {
     let row = document.getElementById("row-" + id);
-
-    row.querySelectorAll(".edit-input").forEach(el => el.style.display = "inline");
+    row.querySelectorAll(".edit-input").forEach(el => el.style.display = "block");
 
     row.querySelector(".edit").style.display = "none";
     row.querySelector(".save").style.display = "inline";
     row.querySelector(".cancel").style.display = "inline";
 }
 
-function cancelRow(id) {
+function cancelRow() {
     location.reload();
 }
 
@@ -282,7 +253,6 @@ function deleteRow(id) {
         .then(() => location.reload());
 }
 
-/* SEARCH */
 function searchPatient() {
     let input = document.getElementById("searchInput").value.toLowerCase();
     let rows = document.querySelectorAll("tr[id^='row-']");
@@ -293,7 +263,6 @@ function searchPatient() {
     });
 }
 
-/* CLEAR */
 function clearSearch() {
     document.getElementById("searchInput").value = "";
     searchPatient();
