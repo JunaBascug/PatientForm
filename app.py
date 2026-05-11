@@ -103,6 +103,8 @@ def login():
         ).fetchone()
 
         if user and check_password_hash(user["password"], password):
+            # 🔥 IMPORTANT FIX: clear old session first
+            session.clear()
             session["user"] = user["username"]
             return redirect('/calendar')
 
@@ -116,14 +118,12 @@ def logout():
     session.clear()
     return redirect('/login')
 
-# ---------------- HOME ----------------
+# ---------------- 🔥 FIXED ROOT ROUTE ----------------
 @app.route('/')
 def home():
-    if "user" not in session:
-        return redirect('/login')
-    return redirect('/calendar')
+    return redirect('/login')
 
-# ---------------- 🔥 FIXED: FORM PAGE (THIS WAS MISSING) ----------------
+# ---------------- FORM ----------------
 @app.route('/form')
 @login_required
 def form():
