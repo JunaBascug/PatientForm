@@ -60,7 +60,7 @@ def init_db():
     )
     """)
 
-    # 🔐 ADMIN FROM ENV VARIABLES (NEW SECURE METHOD)
+    # 🔐 CREATE ADMIN FROM ENV
     admin_user = os.environ.get("ADMIN_USERNAME", "admin")
     admin_pass_raw = os.environ.get("ADMIN_PASSWORD", "admin123")
 
@@ -122,6 +122,12 @@ def home():
     if "user" not in session:
         return redirect('/login')
     return redirect('/calendar')
+
+# ---------------- 🔥 FIXED: FORM PAGE (THIS WAS MISSING) ----------------
+@app.route('/form')
+@login_required
+def form():
+    return render_template("form.html")
 
 # ---------------- ADD PATIENT ----------------
 @app.route('/add', methods=['POST'])
