@@ -132,8 +132,8 @@
         <button onclick="clearSearch()">Clear</button>
     </div>
 
-    <!-- NEW PATIENT -->
-    <a href="/" class="new-btn">+ New Patient</a>
+    <!-- ✅ FIXED NEW PATIENT BUTTON -->
+    <a href="/form" class="new-btn">+ New Patient</a>
 
 </div>
 
@@ -158,58 +158,67 @@
                 <input class="edit-input" type="text" value="{{ d['patient'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>DOB:</b>
+            <div class="field">
+                <b>DOB:</b>
                 <input class="edit-input" type="date" value="{{ d['dob'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>Status:</b>
+            <div class="field">
+                <b>Status:</b>
                 <input class="edit-input" type="text" value="{{ d['status'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>Work:</b>
+            <div class="field">
+                <b>Work:</b>
                 <input class="edit-input" type="text" value="{{ d['work_type'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>Hobbies:</b>
+            <div class="field">
+                <b>Hobbies:</b>
                 <input class="edit-input" type="text" value="{{ d['hobbies'] or '' }}" style="display:none;">
             </div>
         </td>
 
         <!-- MEDICAL INFO -->
         <td>
-            <div class="field"><b>Medical Ins:</b>
+            <div class="field">
+                <b>Medical Ins:</b>
                 <input class="edit-input" type="text" value="{{ d['medical_insurance'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>Accepted:</b>
+            <div class="field">
+                <b>Accepted:</b>
                 <input class="edit-input" type="text" value="{{ d['medical_insurance_accepted'] or '' }}" style="display:none;">
             </div>
         </td>
 
         <!-- VISION INFO -->
         <td>
-            <div class="field"><b>Vision Goals:</b>
+            <div class="field">
+                <b>Vision Goals:</b>
                 <input class="edit-input" type="text" value="{{ d['vision_goals'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>Vision Ins:</b>
+            <div class="field">
+                <b>Vision Ins:</b>
                 <input class="edit-input" type="text" value="{{ d['vision_insurance'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>VSP:</b>
+            <div class="field">
+                <b>VSP:</b>
                 <input class="edit-input" type="text" value="{{ d['vsp_essential_eye_care'] or '' }}" style="display:none;">
             </div>
         </td>
 
         <!-- VISIT INFO -->
         <td>
-            <div class="field"><b>Reason:</b>
-                <span class="view">{{ d['reason'] or '' }}</span>
+            <div class="field">
+                <b>Reason:</b>
                 <input class="edit-input" type="text" value="{{ d['reason'] or '' }}" style="display:none;">
             </div>
 
-            <div class="field"><b>Date:</b>
-                <span class="view">{{ d['date'] or '' }}</span>
+            <div class="field">
+                <b>Date:</b>
                 <input class="edit-input" type="date" value="{{ d['date'] or '' }}" style="display:none;">
             </div>
         </td>
@@ -231,7 +240,6 @@
 function editRow(id) {
     let row = document.getElementById("row-" + id);
 
-    row.querySelectorAll(".view").forEach(el => el.style.display = "none");
     row.querySelectorAll(".edit-input").forEach(el => el.style.display = "inline");
 
     row.querySelector(".edit").style.display = "none";
@@ -270,7 +278,7 @@ function saveRow(id) {
 function deleteRow(id) {
     if (!confirm("Delete this record?")) return;
 
-    fetch("/delete/" + id)
+    fetch("/delete/" + id, { method: "POST" })
         .then(() => location.reload());
 }
 
