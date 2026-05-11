@@ -6,7 +6,7 @@ from functools import wraps
 
 app = Flask(__name__)
 
-# SECRET
+# ---------------- SECRET ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
@@ -30,7 +30,7 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT ----------------
+# ---------------- INIT DB ----------------
 def init_db():
     db = get_db()
 
@@ -60,7 +60,7 @@ def init_db():
     )
     """)
 
-    # AUTO ADMIN
+    # AUTO ADMIN USER
     admin_user = os.environ.get("ADMIN_USERNAME", "admin")
     admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
 
@@ -80,7 +80,7 @@ def init_db():
 with app.app_context():
     init_db()
 
-# ---------------- LOGIN CHECK ----------------
+# ---------------- LOGIN REQUIRED ----------------
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -104,7 +104,7 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
-            return redirect("/calendar")
+            return redirect("/dashboard")   # ✅ FIXED ENTRY POINT
 
         return "Invalid login"
 
@@ -121,11 +121,17 @@ def logout():
 def root():
     return redirect('/login')
 
-# ---------------- FORM (IMPORTANT FIX) ----------------
+# ---------------- FORM ----------------
 @app.route('/form')
 @login_required
 def form():
     return render_template("form.html")
+
+# ---------------- DASHBOARD ----------------
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
 
 # ---------------- CALENDAR ----------------
 @app.route('/calendar')
