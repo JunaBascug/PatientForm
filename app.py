@@ -6,7 +6,7 @@ from functools import wraps
 
 app = Flask(__name__)
 
-# 🔐 Secret key (set in Render ENV)
+# SECRET
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
@@ -17,7 +17,7 @@ app.config.update(
 
 DB_NAME = "database.db"
 
-# ---------------- DATABASE ----------------
+# ---------------- DB ----------------
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DB_NAME)
@@ -30,7 +30,7 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT DB ----------------
+# ---------------- INIT ----------------
 def init_db():
     db = get_db()
 
@@ -60,9 +60,9 @@ def init_db():
     )
     """)
 
-    # 🔐 CREATE ADMIN FROM ENV
+    # AUTO ADMIN
     admin_user = os.environ.get("ADMIN_USERNAME", "admin")
-    admin_pass_raw = os.environ.get("ADMIN_PASSWORD", "admin123")
+    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
 
     existing = db.execute(
         "SELECT * FROM users WHERE username=?",
@@ -72,7 +72,7 @@ def init_db():
     if not existing:
         db.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
-            (admin_user, generate_password_hash(admin_pass_raw))
+            (admin_user, generate_password_hash(admin_pass))
         )
 
     db.commit()
@@ -80,7 +80,7 @@ def init_db():
 with app.app_context():
     init_db()
 
-# ---------------- LOGIN REQUIRED ----------------
+# ---------------- LOGIN CHECK ----------------
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -103,10 +103,8 @@ def login():
         ).fetchone()
 
         if user and check_password_hash(user["password"], password):
-            # 🔥 IMPORTANT FIX: clear old session first
-            session.clear()
             session["user"] = user["username"]
-            return redirect('/calendar')
+            return redirect("/calendar")
 
         return "Invalid login"
 
@@ -118,18 +116,26 @@ def logout():
     session.clear()
     return redirect('/login')
 
-# ---------------- 🔥 FIXED ROOT ROUTE ----------------
+# ---------------- ROOT ----------------
 @app.route('/')
-def home():
+def root():
     return redirect('/login')
 
-# ---------------- FORM ----------------
+# ---------------- FORM (IMPORTANT FIX) ----------------
 @app.route('/form')
 @login_required
 def form():
     return render_template("form.html")
 
-# ---------------- ADD PATIENT ----------------
+# ---------------- CALENDAR ----------------
+@app.route('/calendar')
+@login_required
+def calendar():
+    db = get_db()
+    data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
+    return render_template("calendar.html", data=data)
+
+# ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
@@ -162,21 +168,13 @@ def add():
     db.commit()
     return redirect('/calendar')
 
-# ---------------- CALENDAR ----------------
-@app.route('/calendar')
-@login_required
-def calendar():
-    db = get_db()
-    data = db.execute("SELECT * FROM visits ORDER BY date ASC").fetchall()
-    return render_template("calendar.html", data=data)
-
 # ---------------- UPDATE ----------------
 @app.route('/update/<int:id>', methods=['POST'])
 @login_required
 def update(id):
     data = request.get_json()
-
     db = get_db()
+
     db.execute("""
         UPDATE visits
         SET patient=?, reason=?, date=?, status=?, dob=?,
@@ -210,12 +208,6 @@ def delete(id):
     db.execute("DELETE FROM visits WHERE id=?", (id,))
     db.commit()
     return jsonify({"status": "deleted"})
-
-# ---------------- DASHBOARD ----------------
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    return redirect('/calendar')
 
 # ---------------- SEARCH ----------------
 @app.route('/search')
