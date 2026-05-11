@@ -3,6 +3,7 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, session, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -49,6 +50,7 @@ def init_db():
         reason TEXT,
         date TEXT,
         status TEXT,
+        patient_type TEXT,
         dob TEXT,
         work_type TEXT,
         hobbies TEXT,
@@ -60,7 +62,6 @@ def init_db():
     )
     """)
 
-    # AUTO ADMIN USER
     admin_user = os.environ.get("ADMIN_USERNAME", "admin")
     admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
 
@@ -104,7 +105,7 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
-            return redirect("/dashboard")   # ✅ FIXED ENTRY POINT
+            return redirect("/dashboard")
 
         return "Invalid login"
 
@@ -127,19 +128,13 @@ def root():
 def form():
     return render_template("form.html")
 
-# ---------------- DASHBOARD ----------------
-@app.route('/dashboard')
+# ---------------- CALENDAR ----------------
+@app.route('/calendar')
 @login_required
-def dashboard():
-    return render_template("dashboard.html")
-
-# ---------------- Visit Details ----------------
-@app.route('/visitdetails')
-@login_required
-def visitdetails():
+def calendar():
     db = get_db()
     data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
-    return render_template("visitdetails.html", data=data)
+    return render_template("calendar.html", data=data)
 
 # ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
@@ -150,17 +145,19 @@ def add():
     db.execute("""
         INSERT INTO visits (
             patient, reason, date,
-            status, dob, work_type, hobbies,
+            status, patient_type,
+            dob, work_type, hobbies,
             vision_goals, vision_insurance,
             medical_insurance, medical_insurance_accepted,
             vsp_essential_eye_care
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         request.form.get('patient'),
         request.form.get('reason'),
         request.form.get('date'),
         request.form.get('status'),
+        request.form.get('patient_type'),
         request.form.get('dob'),
         request.form.get('work_type'),
         request.form.get('hobbies'),
@@ -173,6 +170,52 @@ def add():
 
     db.commit()
     return redirect('/calendar')
+
+# ---------------- DASHBOARD (FULL STATS) ----------------
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    db = get_db()
+    visits = db.execute("SELECT * FROM visits").fetchall()
+
+    today = datetime.now().date()
+    week = today - timedelta(days=7)
+    month = today.replace(day=1)
+    year = today.replace(month=1, day=1)
+
+    def calc(start_date):
+        new = 0
+        existing = 0
+
+        for v in visits:
+            try:
+                d = datetime.strptime(v["date"], "%Y-%m-%d").date()
+            except:
+                continue
+
+            if d >= start_date:
+                if v["patient_type"] == "New":
+                    new += 1
+                else:
+                    existing += 1
+
+        return new, existing
+
+    day_new, day_existing = calc(today)
+    week_new, week_existing = calc(week)
+    month_new, month_existing = calc(month)
+    year_new, year_existing = calc(year)
+
+    return render_template("dashboard.html",
+        day_new=day_new,
+        day_existing=day_existing,
+        week_new=week_new,
+        week_existing=week_existing,
+        month_new=month_new,
+        month_existing=month_existing,
+        year_new=year_new,
+        year_existing=year_existing
+    )
 
 # ---------------- UPDATE ----------------
 @app.route('/update/<int:id>', methods=['POST'])
