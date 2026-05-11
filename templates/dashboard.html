@@ -1,24 +1,101 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
 
-{% block content %}
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f7fb;
+            margin: 30px;
+        }
 
-<div class="card">
-    <h2>Dashboard</h2>
+        h2 {
+            margin-bottom: 20px;
+        }
 
-    <p>Total Patients: {{ total_patients }}</p>
-    <p>Total Visits: {{ total_visits }}</p>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
 
-    <h3>Recent Patients</h3>
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+        }
 
-    {% if recent %}
-        <ul>
-            {% for p in recent %}
-                <li>{{ p[0] }} ({{ p[1] }})</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No recent patients found.</p>
-    {% endif %}
+        .title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .label {
+            color: #555;
+        }
+
+        .value {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .nav {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Dashboard</h2>
+
+<div class="grid">
+
+    <div class="card">
+        <div class="title">Today</div>
+        <div class="row"><span class="label">New Patients</span><span class="value">{{ day_new }}</span></div>
+        <div class="row"><span class="label">Existing Patients</span><span class="value">{{ day_existing }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="title">This Week</div>
+        <div class="row"><span class="label">New Patients</span><span class="value">{{ week_new }}</span></div>
+        <div class="row"><span class="label">Existing Patients</span><span class="value">{{ week_existing }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="title">This Month</div>
+        <div class="row"><span class="label">New Patients</span><span class="value">{{ month_new }}</span></div>
+        <div class="row"><span class="label">Existing Patients</span><span class="value">{{ month_existing }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="title">This Year</div>
+        <div class="row"><span class="label">New Patients</span><span class="value">{{ year_new }}</span></div>
+        <div class="row"><span class="label">Existing Patients</span><span class="value">{{ year_existing }}</span></div>
+    </div>
+
 </div>
 
-{% endblock %}
+<div class="nav">
+    <a href="/form">New Patient</a> |
+    <a href="/calendar">Calendar</a>
+</div>
+
+</body>
+</html>
