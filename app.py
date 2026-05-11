@@ -1,15 +1,14 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, session, jsonify, g, abort
+from flask import Flask, render_template, request, redirect, session, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
 
-# 🔐 Secret key (SET THIS IN RENDER ENV)
+# 🔐 Secret key (SET IN RENDER ENV)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-# 🔐 Secure cookies
 app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
@@ -28,13 +27,13 @@ def get_db():
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop("db", None)
-    if db is not None:
+    if db:
         db.close()
 
+# ---------------- INIT DB (ADMIN ONLY SETUP) ----------------
 def init_db():
     db = get_db()
 
-    # USERS TABLE (for login)
     db.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +42,6 @@ def init_db():
     )
     """)
 
-    # VISITS TABLE (your existing)
     db.execute("""
     CREATE TABLE IF NOT EXISTS visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,12 +60,27 @@ def init_db():
     )
     """)
 
+    # 🔐 AUTO CREATE ADMIN (ONLY ONCE)
+    admin_user = "admin"
+    admin_pass = "admin123"   # CHANGE THIS AFTER FIRST LOGIN
+
+    existing = db.execute(
+        "SELECT * FROM users WHERE username=?",
+        (admin_user,)
+    ).fetchone()
+
+    if not existing:
+        db.execute(
+            "INSERT INTO users (username, password) VALUES (?, ?)",
+            (admin_user, generate_password_hash(admin_pass))
+        )
+
     db.commit()
 
 with app.app_context():
     init_db()
 
-# ---------------- AUTH DECORATOR ----------------
+# ---------------- LOGIN REQUIRED ----------------
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -76,25 +89,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-# ---------------- AUTH ROUTES ----------------
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = generate_password_hash(request.form.get('password'))
-
-        try:
-            db = get_db()
-            db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-            db.commit()
-        except:
-            return "User already exists"
-
-        return redirect('/login')
-
-    return render_template("register.html")
-
-
+# ---------------- LOGIN ----------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -102,7 +97,10 @@ def login():
         password = request.form.get('password')
 
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        user = db.execute(
+            "SELECT * FROM users WHERE username=?",
+            (username,)
+        ).fetchone()
 
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
@@ -112,7 +110,7 @@ def login():
 
     return render_template("login.html")
 
-
+# ---------------- LOGOUT ----------------
 @app.route('/logout')
 def logout():
     session.clear()
