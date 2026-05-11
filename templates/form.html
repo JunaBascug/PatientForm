@@ -32,8 +32,14 @@
             gap: 15px;
         }
 
-        .full {
-            grid-column: 1 / -1;
+        .section {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        h4 {
+            margin-top: 0;
         }
 
         label {
@@ -49,12 +55,17 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 12px;
+            margin-bottom: 10px;
         }
 
-        .section {
-            background: #f9f9f9;
-            padding: 10px;
-            border-radius: 8px;
+        input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 3px rgba(79,70,229,0.3);
+        }
+
+        .full {
+            grid-column: 1 / -1;
         }
 
         button {
@@ -92,26 +103,26 @@
 
     <h2>Patient Intake Form</h2>
 
-    <form method="POST" action="/add">
+    <form method="POST" action="/add" autocomplete="off">
 
         <!-- LEFT: PATIENT INFO -->
         <div class="section">
             <h4>Patient Info</h4>
 
             <label>Patient Name</label>
-            <input type="text" name="patient" required>
+            <input type="text" name="patient" required autocomplete="off">
 
             <label>Date of Birth</label>
-            <input type="date" name="dob">
+            <input type="date" name="dob" autocomplete="off">
 
             <label>Status</label>
-            <input type="text" name="status">
+            <input type="text" name="status" autocomplete="off">
 
             <label>Work Type</label>
-            <input type="text" name="work_type">
+            <input type="text" name="work_type" autocomplete="off">
 
             <label>Hobbies</label>
-            <input type="text" name="hobbies">
+            <input type="text" name="hobbies" autocomplete="off">
         </div>
 
         <!-- RIGHT: VISIT INFO -->
@@ -119,10 +130,10 @@
             <h4>Visit Info</h4>
 
             <label>Reason for Visit</label>
-            <input type="text" name="reason" required>
+            <input type="text" name="reason" required autocomplete="off">
 
             <label>Date of Visit</label>
-            <input type="date" name="date" required>
+            <input type="date" name="date" required autocomplete="off">
         </div>
 
         <!-- LEFT BOTTOM: MEDICAL -->
@@ -130,10 +141,10 @@
             <h4>Medical</h4>
 
             <label>Medical Insurance</label>
-            <input type="text" name="medical_insurance">
+            <input type="text" name="medical_insurance" autocomplete="off">
 
             <label>Medical Insurance Accepted?</label>
-            <input type="text" name="medical_insurance_accepted">
+            <input type="text" name="medical_insurance_accepted" autocomplete="off">
         </div>
 
         <!-- RIGHT BOTTOM: VISION -->
@@ -141,13 +152,13 @@
             <h4>Vision</h4>
 
             <label>Vision Goals</label>
-            <input type="text" name="vision_goals">
+            <input type="text" name="vision_goals" autocomplete="off">
 
             <label>Vision Insurance</label>
-            <input type="text" name="vision_insurance">
+            <input type="text" name="vision_insurance" autocomplete="off">
 
             <label>VSP Essential Eye Care</label>
-            <input type="text" name="vsp_essential_eye_care">
+            <input type="text" name="vsp_essential_eye_care" autocomplete="off">
         </div>
 
         <!-- SUBMIT -->
