@@ -6,7 +6,7 @@ from functools import wraps
 
 app = Flask(__name__)
 
-# 🔐 Secret key (SET IN RENDER ENV)
+# 🔐 Secret key (set in Render ENV)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
@@ -30,7 +30,7 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT DB (ADMIN ONLY SETUP) ----------------
+# ---------------- INIT DB ----------------
 def init_db():
     db = get_db()
 
@@ -60,9 +60,9 @@ def init_db():
     )
     """)
 
-    # 🔐 AUTO CREATE ADMIN (ONLY ONCE)
+    # 🔐 Auto-create admin user once
     admin_user = "admin"
-    admin_pass = "admin123"   # CHANGE THIS AFTER FIRST LOGIN
+    admin_pass = "admin123"
 
     existing = db.execute(
         "SELECT * FROM users WHERE username=?",
@@ -104,7 +104,9 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
-            return redirect('/dashboard')
+
+            # 🔥 FIX: redirect to calendar (your request)
+            return redirect('/calendar')
 
         return "Invalid login"
 
@@ -118,10 +120,10 @@ def logout():
 
 # ---------------- HOME ----------------
 @app.route('/')
-def form():
+def home():
     if "user" not in session:
-        return redirect("/login")
-    return render_template("form.html")
+        return redirect('/login')
+    return redirect('/calendar')
 
 # ---------------- ADD PATIENT ----------------
 @app.route('/add', methods=['POST'])
@@ -205,12 +207,13 @@ def delete(id):
     db.commit()
     return jsonify({"status": "deleted"})
 
-# ---------------- OTHER PAGES ----------------
+# ---------------- DASHBOARD (optional kept) ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    return redirect('/calendar')
 
+# ---------------- SEARCH ----------------
 @app.route('/search')
 @login_required
 def search():
