@@ -1,30 +1,55 @@
-from flask import Flask, render_template, request, redirect, jsonify
+import os
 import sqlite3
+from flask import Flask, render_template, request, redirect, session, jsonify, g, abort
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 app = Flask(__name__)
+
+# 🔐 Secret key (SET THIS IN RENDER ENV)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+# 🔐 Secure cookies
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax'
+)
 
 DB_NAME = "database.db"
 
 # ---------------- DATABASE ----------------
 def get_db():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if "db" not in g:
+        g.db = sqlite3.connect(DB_NAME)
+        g.db.row_factory = sqlite3.Row
+    return g.db
 
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
 
 def init_db():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
 
-    # SAFE TABLE CREATION (expanded for your form)
-    cur.execute("""
+    # USERS TABLE (for login)
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )
+    """)
+
+    # VISITS TABLE (your existing)
+    db.execute("""
     CREATE TABLE IF NOT EXISTS visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-
         patient TEXT,
         reason TEXT,
         date TEXT,
-
         status TEXT,
         dob TEXT,
         work_type TEXT,
@@ -37,25 +62,76 @@ def init_db():
     )
     """)
 
-    conn.commit()
-    conn.close()
+    db.commit()
 
-init_db()
+with app.app_context():
+    init_db()
+
+# ---------------- AUTH DECORATOR ----------------
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+# ---------------- AUTH ROUTES ----------------
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = generate_password_hash(request.form.get('password'))
+
+        try:
+            db = get_db()
+            db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            db.commit()
+        except:
+            return "User already exists"
+
+        return redirect('/login')
+
+    return render_template("register.html")
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+
+        if user and check_password_hash(user["password"], password):
+            session["user"] = user["username"]
+            return redirect('/dashboard')
+
+        return "Invalid login"
+
+    return render_template("login.html")
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
 
 # ---------------- HOME ----------------
 @app.route('/')
 def form():
+    if "user" not in session:
+        return redirect("/login")
     return render_template("form.html")
-
 
 # ---------------- ADD PATIENT ----------------
 @app.route('/add', methods=['POST'])
+@login_required
 def add():
+    db = get_db()
 
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("""
+    db.execute("""
         INSERT INTO visits (
             patient, reason, date,
             status, dob, work_type, hobbies,
@@ -68,7 +144,6 @@ def add():
         request.form.get('patient'),
         request.form.get('reason'),
         request.form.get('date'),
-
         request.form.get('status'),
         request.form.get('dob'),
         request.form.get('work_type'),
@@ -80,49 +155,29 @@ def add():
         request.form.get('vsp_essential_eye_care')
     ))
 
-    conn.commit()
-    conn.close()
-
+    db.commit()
     return redirect('/calendar')
-
 
 # ---------------- CALENDAR ----------------
 @app.route('/calendar')
+@login_required
 def calendar():
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM visits ORDER BY date ASC")
-    data = cur.fetchall()
-
-    conn.close()
-
+    db = get_db()
+    data = db.execute("SELECT * FROM visits ORDER BY date ASC").fetchall()
     return render_template("calendar.html", data=data)
 
-
-# ---------------- UPDATE (INLINE EDIT) ----------------
+# ---------------- UPDATE ----------------
 @app.route('/update/<int:id>', methods=['POST'])
+@login_required
 def update(id):
     data = request.get_json()
 
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("""
+    db = get_db()
+    db.execute("""
         UPDATE visits
-        SET
-            patient=?,
-            reason=?,
-            date=?,
-            status=?,
-            dob=?,
-            work_type=?,
-            hobbies=?,
-            vision_goals=?,
-            vision_insurance=?,
-            medical_insurance=?,
-            medical_insurance_accepted=?,
-            vsp_essential_eye_care=?
+        SET patient=?, reason=?, date=?, status=?, dob=?,
+            work_type=?, hobbies=?, vision_goals=?, vision_insurance=?,
+            medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
         WHERE id=?
     """, (
         data.get('patient'),
@@ -140,37 +195,30 @@ def update(id):
         id
     ))
 
-    conn.commit()
-    conn.close()
-
+    db.commit()
     return jsonify({"status": "success"})
 
-
 # ---------------- DELETE ----------------
-@app.route('/delete/<int:id>')
+@app.route('/delete/<int:id>', methods=['POST'])
+@login_required
 def delete(id):
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM visits WHERE id=?", (id,))
-
-    conn.commit()
-    conn.close()
-
+    db = get_db()
+    db.execute("DELETE FROM visits WHERE id=?", (id,))
+    db.commit()
     return jsonify({"status": "deleted"})
-
 
 # ---------------- OTHER PAGES ----------------
 @app.route('/dashboard')
+@login_required
 def dashboard():
     return render_template("dashboard.html")
 
-
 @app.route('/search')
+@login_required
 def search():
     return render_template("search.html")
 
-
 # ---------------- RUN ----------------
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
