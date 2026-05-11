@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card">
+
+<h1>👤 Patient Profile</h1>
+
+<p>Name: {{ patient[1] }}</p>
+<p>DOB: {{ patient[2] }}</p>
+
+<hr>
+
+<h2>➕ Add Appointment</h2>
+
+<form method="POST" action="/add_appointment/{{ patient[0] }}">
+    <input name="title" placeholder="Reason"><br><br>
+    <input type="date" name="date"><br><br>
+    <input type="time" name="time"><br><br>
+    <button type="submit">Add Appointment</button>
+</form>
+
+<hr>
+
+<h2>📅 Appointments</h2>
+
+{% for a in appointments %}
+    <p>
+        {{ a[2] }} - {{ a[3] }} {{ a[4] }}
+        <a href="/delete_appointment/{{ a[0] }}">Delete</a>
+    </p>
+{% endfor %}
+
+<hr>
+
+<h2>📝 Visits</h2>
+
+{% for v in visits %}
+    <p>
+        {{ v[0] }} - {{ v[1] }} ({{ v[3] }})
+    </p>
+{% endfor %}
+
+</div>
+
+{% endblock %}

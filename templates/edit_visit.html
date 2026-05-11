@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Edit Visit</h2>
+
+    <form method="POST">
+        <label>Visit Reason</label><br>
+        <input type="text" name="reason"><br><br>
+
+        <label>Visit Date</label><br>
+        <input type="date" name="visit_date"><br><br>
+
+        <label>Status</label><br>
+        <select name="status">
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+        </select><br><br>
+
+        <button type="submit">Update Visit</button>
+    </form>
+</div>
+
+{% endblock %}

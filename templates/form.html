@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Patient Intake Form</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f7fb;
+            margin: 20px;
+            font-size: 13px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 7px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .section {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .nav {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .nav a {
+            margin: 0 8px;
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Patient Intake Form</h2>
+
+    <form method="POST" action="/add">
+
+        <!-- LEFT: PATIENT INFO -->
+        <div class="section">
+            <h4>Patient Info</h4>
+
+            <label>Patient Name</label>
+            <input type="text" name="patient" required>
+
+            <label>Date of Birth</label>
+            <input type="date" name="dob">
+
+            <label>Status</label>
+            <input type="text" name="status">
+
+            <label>Work Type</label>
+            <input type="text" name="work_type">
+
+            <label>Hobbies</label>
+            <input type="text" name="hobbies">
+        </div>
+
+        <!-- RIGHT: VISIT INFO -->
+        <div class="section">
+            <h4>Visit Info</h4>
+
+            <label>Reason for Visit</label>
+            <input type="text" name="reason" required>
+
+            <label>Date of Visit</label>
+            <input type="date" name="date" required>
+        </div>
+
+        <!-- LEFT BOTTOM: MEDICAL -->
+        <div class="section">
+            <h4>Medical</h4>
+
+            <label>Medical Insurance</label>
+            <input type="text" name="medical_insurance">
+
+            <label>Medical Insurance Accepted?</label>
+            <input type="text" name="medical_insurance_accepted">
+        </div>
+
+        <!-- RIGHT BOTTOM: VISION -->
+        <div class="section">
+            <h4>Vision</h4>
+
+            <label>Vision Goals</label>
+            <input type="text" name="vision_goals">
+
+            <label>Vision Insurance</label>
+            <input type="text" name="vision_insurance">
+
+            <label>VSP Essential Eye Care</label>
+            <input type="text" name="vsp_essential_eye_care">
+        </div>
+
+        <!-- SUBMIT -->
+        <div class="full">
+            <button type="submit">Submit Patient</button>
+        </div>
+
+    </form>
+
+    <div class="nav">
+        <a href="/">Form</a>
+        <a href="/calendar">Visit Details</a>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visit Details</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            margin: 20px;
+            font-size: 12px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        /* TOP BAR */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 5px;
+        }
+
+        .search-box input {
+            padding: 7px;
+            width: 220px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .search-box button {
+            padding: 7px 10px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .new-btn {
+            padding: 7px 12px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        th {
+            background: #4CAF50;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            margin: 1px;
+        }
+
+        .edit { background: #2196F3; color: white; }
+        .save { background: #4CAF50; color: white; }
+        .delete { background: #f44336; color: white; }
+        .cancel { background: #777; color: white; }
+
+        .field {
+            margin-bottom: 2px;
+            line-height: 1.2em;
+        }
+
+        .patient-name {
+            font-weight: bold;
+        }
+
+        input.edit-input {
+            font-size: 12px;
+            padding: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Visit Details</h2>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+
+    <!-- SEARCH -->
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search Patient Name..." onkeyup="searchPatient()">
+        <button onclick="clearSearch()">Clear</button>
+    </div>
+
+    <!-- NEW PATIENT -->
+    <a href="/" class="new-btn">+ New Patient</a>
+
+</div>
+
+<table>
+
+    <tr>
+        <th>Patient Info</th>
+        <th>Medical Info</th>
+        <th>Vision Info</th>
+        <th>Visit</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for d in data %}
+    <tr id="row-{{ d['id'] }}">
+
+        <!-- PATIENT INFO -->
+        <td>
+            <div class="field">
+                <b>Name:</b>
+                <span class="patient-name">{{ d['patient'] or '' }}</span>
+                <input class="edit-input" type="text" value="{{ d['patient'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>DOB:</b>
+                <input class="edit-input" type="date" value="{{ d['dob'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>Status:</b>
+                <input class="edit-input" type="text" value="{{ d['status'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>Work:</b>
+                <input class="edit-input" type="text" value="{{ d['work_type'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>Hobbies:</b>
+                <input class="edit-input" type="text" value="{{ d['hobbies'] or '' }}" style="display:none;">
+            </div>
+        </td>
+
+        <!-- MEDICAL INFO -->
+        <td>
+            <div class="field"><b>Medical Ins:</b>
+                <input class="edit-input" type="text" value="{{ d['medical_insurance'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>Accepted:</b>
+                <input class="edit-input" type="text" value="{{ d['medical_insurance_accepted'] or '' }}" style="display:none;">
+            </div>
+        </td>
+
+        <!-- VISION INFO -->
+        <td>
+            <div class="field"><b>Vision Goals:</b>
+                <input class="edit-input" type="text" value="{{ d['vision_goals'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>Vision Ins:</b>
+                <input class="edit-input" type="text" value="{{ d['vision_insurance'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>VSP:</b>
+                <input class="edit-input" type="text" value="{{ d['vsp_essential_eye_care'] or '' }}" style="display:none;">
+            </div>
+        </td>
+
+        <!-- VISIT INFO -->
+        <td>
+            <div class="field"><b>Reason:</b>
+                <span class="view">{{ d['reason'] or '' }}</span>
+                <input class="edit-input" type="text" value="{{ d['reason'] or '' }}" style="display:none;">
+            </div>
+
+            <div class="field"><b>Date:</b>
+                <span class="view">{{ d['date'] or '' }}</span>
+                <input class="edit-input" type="date" value="{{ d['date'] or '' }}" style="display:none;">
+            </div>
+        </td>
+
+        <!-- ACTIONS -->
+        <td>
+            <button class="btn edit" onclick="editRow({{ d['id'] }})">Edit</button>
+            <button class="btn save" style="display:none;" onclick="saveRow({{ d['id'] }})">Save</button>
+            <button class="btn cancel" style="display:none;" onclick="cancelRow({{ d['id'] }})">Cancel</button>
+            <button class="btn delete" onclick="deleteRow({{ d['id'] }})">Delete</button>
+        </td>
+
+    </tr>
+    {% endfor %}
+
+</table>
+
+<script>
+function editRow(id) {
+    let row = document.getElementById("row-" + id);
+
+    row.querySelectorAll(".view").forEach(el => el.style.display = "none");
+    row.querySelectorAll(".edit-input").forEach(el => el.style.display = "inline");
+
+    row.querySelector(".edit").style.display = "none";
+    row.querySelector(".save").style.display = "inline";
+    row.querySelector(".cancel").style.display = "inline";
+}
+
+function cancelRow(id) {
+    location.reload();
+}
+
+function saveRow(id) {
+    let row = document.getElementById("row-" + id);
+    let inputs = row.querySelectorAll(".edit-input");
+
+    fetch("/update/" + id, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            patient: inputs[0].value,
+            dob: inputs[1].value,
+            status: inputs[2].value,
+            work_type: inputs[3].value,
+            hobbies: inputs[4].value,
+            medical_insurance: inputs[5].value,
+            medical_insurance_accepted: inputs[6].value,
+            vision_goals: inputs[7].value,
+            vision_insurance: inputs[8].value,
+            vsp_essential_eye_care: inputs[9].value,
+            reason: inputs[10].value,
+            date: inputs[11].value
+        })
+    }).then(() => location.reload());
+}
+
+function deleteRow(id) {
+    if (!confirm("Delete this record?")) return;
+
+    fetch("/delete/" + id)
+        .then(() => location.reload());
+}
+
+/* SEARCH */
+function searchPatient() {
+    let input = document.getElementById("searchInput").value.toLowerCase();
+    let rows = document.querySelectorAll("tr[id^='row-']");
+
+    rows.forEach(row => {
+        let name = row.querySelector(".patient-name").innerText.toLowerCase();
+        row.style.display = name.includes(input) ? "" : "none";
+    });
+}
+
+/* CLEAR */
+function clearSearch() {
+    document.getElementById("searchInput").value = "";
+    searchPatient();
+}
+</script>
+
+</body>
+</html>
