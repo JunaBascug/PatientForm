@@ -133,13 +133,13 @@ def form():
 def dashboard():
     return render_template("dashboard.html")
 
-# ---------------- CALENDAR ----------------
-@app.route('/calendar')
+# ---------------- Visit Details ----------------
+@app.route('/visitdetails')
 @login_required
-def calendar():
+def visitdetails():
     db = get_db()
     data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
-    return render_template("calendar.html", data=data)
+    return render_template("visitdetails.html", data=data)
 
 # ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
