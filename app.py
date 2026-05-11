@@ -60,9 +60,9 @@ def init_db():
     )
     """)
 
-    # 🔐 Auto-create admin user once
-    admin_user = "admin"
-    admin_pass = "admin123"
+    # 🔐 ADMIN FROM ENV VARIABLES (NEW SECURE METHOD)
+    admin_user = os.environ.get("ADMIN_USERNAME", "admin")
+    admin_pass_raw = os.environ.get("ADMIN_PASSWORD", "admin123")
 
     existing = db.execute(
         "SELECT * FROM users WHERE username=?",
@@ -72,7 +72,7 @@ def init_db():
     if not existing:
         db.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
-            (admin_user, generate_password_hash(admin_pass))
+            (admin_user, generate_password_hash(admin_pass_raw))
         )
 
     db.commit()
@@ -104,8 +104,6 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
-
-            # 🔥 FIX: redirect to calendar (your request)
             return redirect('/calendar')
 
         return "Invalid login"
@@ -207,7 +205,7 @@ def delete(id):
     db.commit()
     return jsonify({"status": "deleted"})
 
-# ---------------- DASHBOARD (optional kept) ----------------
+# ---------------- DASHBOARD ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
