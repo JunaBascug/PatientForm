@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SECURE=False,  # ⚠️ Render fix (True can break login in some setups)
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax'
 )
@@ -128,7 +128,7 @@ def root():
 def form():
     return render_template("form.html")
 
-# ---------------- CALENDAR ----------------
+# ---------------- VISIT DETAILS (FIXED NAME) ----------------
 @app.route('/visitdetails')
 @login_required
 def visitdetails():
@@ -141,14 +141,6 @@ def visitdetails():
 @login_required
 def add():
     db = get_db()
-
-    patient_type = request.form.get('patient_type')
-    if not patient_type:
-        patient_type = "Existing"
-
-    date = request.form.get('date')
-    if not date:
-        date = datetime.now().strftime("%Y-%m-%d")
 
     db.execute("""
         INSERT INTO visits (
@@ -163,9 +155,9 @@ def add():
     """, (
         request.form.get('patient'),
         request.form.get('reason'),
-        date,
+        request.form.get('date'),
         request.form.get('status'),
-        patient_type,
+        request.form.get('patient_type', 'Existing'),
         request.form.get('dob'),
         request.form.get('work_type'),
         request.form.get('hobbies'),
@@ -177,9 +169,9 @@ def add():
     ))
 
     db.commit()
-    return redirect('/calendar')
+    return redirect('/visitdetails')
 
-# ---------------- DASHBOARD (SAFE VERSION) ----------------
+# ---------------- DASHBOARD (FIXED CALCULATION) ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -187,10 +179,13 @@ def dashboard():
     visits = db.execute("SELECT * FROM visits").fetchall()
 
     today = datetime.now().date()
+    week_start = today - timedelta(days=7)
+    month_start = today.replace(day=1)
+    year_start = today.replace(month=1, day=1)
 
-    def safe_date(value):
+    def safe_date(d):
         try:
-            return datetime.strptime(value, "%Y-%m-%d").date()
+            return datetime.strptime(d, "%Y-%m-%d").date()
         except:
             return None
 
@@ -210,10 +205,6 @@ def dashboard():
                     existing += 1
 
         return new, existing
-
-    week_start = today - timedelta(days=7)
-    month_start = today.replace(day=1)
-    year_start = today.replace(month=1, day=1)
 
     day_new, day_existing = count(today)
     week_new, week_existing = count(week_start)
