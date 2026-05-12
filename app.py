@@ -142,6 +142,10 @@ def calendar():
 def add():
     db = get_db()
 
+    patient_type = request.form.get('patient_type')
+    if not patient_type:
+        patient_type = "Existing"  # default fallback
+
     db.execute("""
         INSERT INTO visits (
             patient, reason, date,
@@ -157,7 +161,7 @@ def add():
         request.form.get('reason'),
         request.form.get('date'),
         request.form.get('status'),
-        request.form.get('patient_type'),
+        patient_type,
         request.form.get('dob'),
         request.form.get('work_type'),
         request.form.get('hobbies'),
@@ -171,7 +175,7 @@ def add():
     db.commit()
     return redirect('/calendar')
 
-# ---------------- DASHBOARD (FULL STATS) ----------------
+# ---------------- DASHBOARD STATS ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -179,11 +183,11 @@ def dashboard():
     visits = db.execute("SELECT * FROM visits").fetchall()
 
     today = datetime.now().date()
-    week = today - timedelta(days=7)
-    month = today.replace(day=1)
-    year = today.replace(month=1, day=1)
+    week_start = today - timedelta(days=7)
+    month_start = today.replace(day=1)
+    year_start = today.replace(month=1, day=1)
 
-    def calc(start_date):
+    def count(start_date):
         new = 0
         existing = 0
 
@@ -201,10 +205,10 @@ def dashboard():
 
         return new, existing
 
-    day_new, day_existing = calc(today)
-    week_new, week_existing = calc(week)
-    month_new, month_existing = calc(month)
-    year_new, year_existing = calc(year)
+    day_new, day_existing = count(today)
+    week_new, week_existing = count(week_start)
+    month_new, month_existing = count(month_start)
+    year_new, year_existing = count(year_start)
 
     return render_template("dashboard.html",
         day_new=day_new,
