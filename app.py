@@ -10,8 +10,9 @@ app = Flask(__name__)
 # ---------------- SECRET ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
+# IMPORTANT FOR RENDER (FIX LOGIN LOOP)
 app.config.update(
-    SESSION_COOKIE_SECURE=False,  # IMPORTANT for Render stability
+    SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax'
 )
@@ -31,7 +32,7 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT DB (SAFE MIGRATION) ----------------
+# ---------------- INIT DB ----------------
 def init_db():
     db = get_db()
 
@@ -105,7 +106,7 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["user"] = user["username"]
-            return redirect("/dashboard")
+            return redirect("/visitdetails")
 
         return "Invalid login"
 
@@ -128,13 +129,13 @@ def root():
 def form():
     return render_template("form.html")
 
-# ---------------- VISIT DETAILS ----------------
+# ---------------- VISIT DETAILS (FIXED NAME) ----------------
 @app.route('/visitdetails')
 @login_required
 def visitdetails():
     db = get_db()
     data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
-    return render_template("calendar.html", data=data)
+    return render_template("visitdetails.html", data=data)
 
 # ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
@@ -171,7 +172,7 @@ def add():
     db.commit()
     return redirect('/visitdetails')
 
-# ---------------- DASHBOARD (CRASH-PROOF) ----------------
+# ---------------- DASHBOARD (SAFE) ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -190,10 +191,7 @@ def dashboard():
             return None
 
     def get_type(v):
-        try:
-            return v["patient_type"] if "patient_type" in v.keys() else "Existing"
-        except:
-            return "Existing"
+        return v["patient_type"] if "patient_type" in v.keys() else "Existing"
 
     def count(start_date):
         new = 0
