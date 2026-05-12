@@ -129,9 +129,9 @@ def form():
     return render_template("form.html")
 
 # ---------------- CALENDAR ----------------
-@app.route('/calendar')
+@app.route('/visitdetails')
 @login_required
-def calendar():
+def visitdetails():
     db = get_db()
     data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
     return render_template("calendar.html", data=data)
