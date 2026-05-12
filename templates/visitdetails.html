@@ -8,16 +8,16 @@
             font-family: Arial;
             background: #f5f7fb;
             margin: 20px;
-            font-size: 12px;
         }
 
-        h2 { margin-bottom: 10px; }
+        h2 {
+            margin-bottom: 15px;
+        }
 
         .top-bar {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
+            margin-bottom: 15px;
         }
 
         .btn {
@@ -26,31 +26,66 @@
             color: white;
             text-decoration: none;
             font-size: 12px;
+            margin-right: 5px;
         }
 
         .green { background: #4CAF50; }
         .blue { background: #2196F3; }
 
-        table {
-            width: 100%;
+        /* CARD DESIGN */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
             background: white;
-            border-collapse: collapse;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
         }
 
-        th {
-            background: #4CAF50;
-            color: white;
-            padding: 8px;
+        .name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
         }
 
-        td {
-            padding: 6px;
-            border-bottom: 1px solid #ddd;
+        .row {
+            margin: 4px 0;
+            font-size: 12px;
         }
 
-        input.edit-input {
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 5px;
+            margin-top: 3px;
             display: none;
         }
+
+        .actions {
+            margin-top: 10px;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .edit { background: #2196F3; }
+        .save { background: #4CAF50; display: none; }
+        .cancel { background: #777; display: none; }
+        .delete { background: #f44336; }
     </style>
 </head>
 
@@ -65,52 +100,90 @@
     </div>
 </div>
 
-<table>
-<tr>
-    <th>Patient</th>
-    <th>Medical</th>
-    <th>Vision</th>
-    <th>Visit</th>
-    <th>Actions</th>
-</tr>
+<div class="grid">
 
 {% for d in data %}
-<tr id="row-{{ d['id'] }}">
+<div class="card" id="card-{{ d['id'] }}">
 
-    <td>
-        {{ d['patient'] }}
-    </td>
+    <!-- NAME -->
+    <div class="name">
+        <span class="view">{{ d['patient'] }}</span>
+        <input class="edit-input" value="{{ d['patient'] }}">
+    </div>
 
-    <td>
-        {{ d['medical_insurance'] }}
-    </td>
+    <!-- DOB -->
+    <div class="row">
+        <span class="label">DOB:</span>
+        <span class="view">{{ d['dob'] }}</span>
+        <input class="edit-input" type="date" value="{{ d['dob'] }}">
+    </div>
 
-    <td>
-        {{ d['vision_goals'] }}
-    </td>
+    <!-- STATUS -->
+    <div class="row">
+        <span class="label">Status:</span>
+        <span class="view">{{ d['status'] }}</span>
+        <input class="edit-input" value="{{ d['status'] }}">
+    </div>
 
-    <td>
-        {{ d['reason'] }} <br>
-        {{ d['date'] }}
-    </td>
+    <!-- WORK -->
+    <div class="row">
+        <span class="label">Work:</span>
+        <span class="view">{{ d['work_type'] }}</span>
+        <input class="edit-input" value="{{ d['work_type'] }}">
+    </div>
 
-    <td>
-        <button onclick="deleteRow({{ d['id'] }})">Delete</button>
-    </td>
+    <!-- HOBBIES -->
+    <div class="row">
+        <span class="label">Hobbies:</span>
+        <span class="view">{{ d['hobbies'] }}</span>
+        <input class="edit-input" value="{{ d['hobbies'] }}">
+    </div>
 
-</tr>
+    <!-- MEDICAL -->
+    <div class="row">
+        <span class="label">Medical:</span>
+        <span class="view">{{ d['medical_insurance'] }}</span>
+        <input class="edit-input" value="{{ d['medical_insurance'] }}">
+    </div>
+
+    <!-- VISION -->
+    <div class="row">
+        <span class="label">Vision:</span>
+        <span class="view">{{ d['vision_goals'] }}</span>
+        <input class="edit-input" value="{{ d['vision_goals'] }}">
+    </div>
+
+    <!-- VISIT -->
+    <div class="row">
+        <span class="label">Reason:</span>
+        <span class="view">{{ d['reason'] }}</span>
+        <input class="edit-input" value="{{ d['reason'] }}">
+    </div>
+
+    <div class="row">
+        <span class="label">Date:</span>
+        <span class="view">{{ d['date'] }}</span>
+        <input class="edit-input" type="date" value="{{ d['date'] }}">
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+
+        <button class="btn-small edit" onclick="editCard({{ d['id'] }})">Edit</button>
+        <button class="btn-small save" onclick="saveCard({{ d['id'] }})">Save</button>
+        <button class="btn-small cancel" onclick="cancelCard()">Cancel</button>
+        <button class="btn-small delete" onclick="deleteRow({{ d['id'] }})">Delete</button>
+
+    </div>
+
+</div>
 {% endfor %}
 
-</table>
+</div>
 
 <script>
-function deleteRow(id) {
-    if (!confirm("Delete?")) return;
 
-    fetch("/delete/" + id, { method: "POST" })
-    .then(() => location.reload());
-}
-</script>
+function editCard(id) {
+    let card = document.getElementById("card-" + id);
 
-</body>
-</html>
+    card.querySelectorAll(".
