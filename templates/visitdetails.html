@@ -12,9 +12,7 @@
         }
 
         h2 {
-            color: #333;
             font-size: 18px;
-            margin-bottom: 10px;
         }
 
         .top-bar {
@@ -22,13 +20,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
-            gap: 10px;
             flex-wrap: wrap;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 5px;
         }
 
         .search-box input {
@@ -36,49 +28,32 @@
             width: 220px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            font-size: 12px;
-        }
-
-        .search-box button {
-            padding: 7px 10px;
-            border: none;
-            background: #4CAF50;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
         }
 
         .new-btn, .dash-btn {
             padding: 7px 12px;
-            background: #4CAF50;
             color: white;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
             font-size: 12px;
-            margin-left: 5px;
         }
 
-        .dash-btn {
-            background: #2196F3;
-        }
+        .new-btn { background: #4CAF50; }
+        .dash-btn { background: #2196F3; }
 
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
-            box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
             border-radius: 6px;
             overflow: hidden;
-            font-size: 12px;
         }
 
         th {
             background: #4CAF50;
             color: white;
             padding: 8px;
-            text-align: left;
         }
 
         td {
@@ -87,16 +62,11 @@
             vertical-align: top;
         }
 
-        tr:hover {
-            background: #f9f9f9;
-        }
-
         .btn {
-            padding: 3px 6px;
-            border-radius: 4px;
+            padding: 4px 6px;
             font-size: 11px;
-            cursor: pointer;
             border: none;
+            cursor: pointer;
             margin: 1px;
         }
 
@@ -105,18 +75,14 @@
         .delete { background: #f44336; color: white; }
         .cancel { background: #777; color: white; }
 
-        .field {
-            margin-bottom: 2px;
+        input.edit-input {
+            display: none;
+            width: 100%;
+            margin: 2px 0;
         }
 
         .patient-name {
             font-weight: bold;
-        }
-
-        input.edit-input {
-            font-size: 12px;
-            padding: 3px;
-            display: none;
         }
     </style>
 </head>
@@ -128,8 +94,7 @@
 <div class="top-bar">
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search Patient Name..." onkeyup="searchPatient()">
-        <button onclick="clearSearch()">Clear</button>
+        <input type="text" id="searchInput" placeholder="Search Patient..." onkeyup="searchPatient()">
     </div>
 
     <div>
@@ -141,131 +106,98 @@
 
 <table>
 
-    <tr>
-        <th>Patient Info</th>
-        <th>Medical Info</th>
-        <th>Vision Info</th>
-        <th>Visit</th>
-        <th>Actions</th>
-    </tr>
+<tr>
+    <th>Patient Info</th>
+    <th>Medical</th>
+    <th>Vision</th>
+    <th>Visit</th>
+    <th>Actions</th>
+</tr>
 
-    {% for d in data %}
-    <tr id="row-{{ d['id'] }}">
+{% for d in data %}
+<tr id="row-{{ d['id'] }}">
 
-        <td>
-            <div><b>Name:</b> <span class="patient-name">{{ d['patient'] or '' }}</span></div>
-            <input class="edit-input" type="text" value="{{ d['patient'] or '' }}">
+    <td>
+        <b class="patient-name">{{ d['patient'] }}</b>
+        <input class="edit-input" value="{{ d['patient'] }}">
 
-            <div><b>DOB:</b></div>
-            <input class="edit-input" type="date" value="{{ d['dob'] or '' }}">
+        <input class="edit-input" type="date" value="{{ d['dob'] }}">
+        <input class="edit-input" value="{{ d['status'] }}">
+        <input class="edit-input" value="{{ d['work_type'] }}">
+        <input class="edit-input" value="{{ d['hobbies'] }}">
+    </td>
 
-            <div><b>Status:</b></div>
-            <input class="edit-input" type="text" value="{{ d['status'] or '' }}">
+    <td>
+        <input class="edit-input" value="{{ d['medical_insurance'] }}">
+        <input class="edit-input" value="{{ d['medical_insurance_accepted'] }}">
+    </td>
 
-            <div><b>Work:</b></div>
-            <input class="edit-input" type="text" value="{{ d['work_type'] or '' }}">
+    <td>
+        <input class="edit-input" value="{{ d['vision_goals'] }}">
+        <input class="edit-input" value="{{ d['vision_insurance'] }}">
+        <input class="edit-input" value="{{ d['vsp_essential_eye_care'] }}">
+    </td>
 
-            <div><b>Hobbies:</b></div>
-            <input class="edit-input" type="text" value="{{ d['hobbies'] or '' }}">
-        </td>
+    <td>
+        <input class="edit-input" value="{{ d['reason'] }}">
+        <input class="edit-input" type="date" value="{{ d['date'] }}">
+    </td>
 
-        <td>
-            <div><b>Medical:</b></div>
-            <input class="edit-input" type="text" value="{{ d['medical_insurance'] or '' }}">
+    <td>
+        <button class="btn edit" onclick="editRow({{ d['id'] }})">Edit</button>
+        <button class="btn save" style="display:none;" onclick="saveRow({{ d['id'] }})">Save</button>
+        <button class="btn cancel" style="display:none;" onclick="location.reload()">Cancel</button>
+        <button class="btn delete" onclick="deleteRow({{ d['id'] }})">Delete</button>
+    </td>
 
-            <div><b>Accepted:</b></div>
-            <input class="edit-input" type="text" value="{{ d['medical_insurance_accepted'] or '' }}">
-        </td>
-
-        <td>
-            <div><b>Goals:</b></div>
-            <input class="edit-input" type="text" value="{{ d['vision_goals'] or '' }}">
-
-            <div><b>Vision:</b></div>
-            <input class="edit-input" type="text" value="{{ d['vision_insurance'] or '' }}">
-
-            <div><b>VSP:</b></div>
-            <input class="edit-input" type="text" value="{{ d['vsp_essential_eye_care'] or '' }}">
-        </td>
-
-        <td>
-            <div><b>Reason:</b></div>
-            <input class="edit-input" type="text" value="{{ d['reason'] or '' }}">
-
-            <div><b>Date:</b></div>
-            <input class="edit-input" type="date" value="{{ d['date'] or '' }}">
-        </td>
-
-        <td>
-            <button class="btn edit" onclick="editRow({{ d['id'] }})">Edit</button>
-            <button class="btn save" style="display:none;" onclick="saveRow({{ d['id'] }})">Save</button>
-            <button class="btn cancel" style="display:none;" onclick="cancelRow()">Cancel</button>
-            <button class="btn delete" onclick="deleteRow({{ d['id'] }})">Delete</button>
-        </td>
-
-    </tr>
-    {% endfor %}
+</tr>
+{% endfor %}
 
 </table>
 
 <script>
-function editRow(id) {
-    let row = document.getElementById("row-" + id);
-    row.querySelectorAll(".edit-input").forEach(el => el.style.display = "block");
+function editRow(id){
+    let row = document.getElementById("row-"+id);
+    row.querySelectorAll(".edit-input").forEach(i => i.style.display="block");
 
-    row.querySelector(".edit").style.display = "none";
-    row.querySelector(".save").style.display = "inline";
-    row.querySelector(".cancel").style.display = "inline";
+    row.querySelector(".edit").style.display="none";
+    row.querySelector(".save").style.display="inline";
 }
 
-function cancelRow() {
-    location.reload();
-}
+function saveRow(id){
+    let row = document.getElementById("row-"+id);
+    let i = row.querySelectorAll(".edit-input");
 
-function saveRow(id) {
-    let row = document.getElementById("row-" + id);
-    let inputs = row.querySelectorAll(".edit-input");
-
-    fetch("/update/" + id, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            patient: inputs[0].value,
-            dob: inputs[1].value,
-            status: inputs[2].value,
-            work_type: inputs[3].value,
-            hobbies: inputs[4].value,
-            medical_insurance: inputs[5].value,
-            medical_insurance_accepted: inputs[6].value,
-            vision_goals: inputs[7].value,
-            vision_insurance: inputs[8].value,
-            vsp_essential_eye_care: inputs[9].value,
-            reason: inputs[10].value,
-            date: inputs[11].value
+    fetch("/update/"+id,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            patient:i[0].value,
+            dob:i[1].value,
+            status:i[2].value,
+            work_type:i[3].value,
+            hobbies:i[4].value,
+            medical_insurance:i[5].value,
+            medical_insurance_accepted:i[6].value,
+            vision_goals:i[7].value,
+            vision_insurance:i[8].value,
+            vsp_essential_eye_care:i[9].value,
+            reason:i[10].value,
+            date:i[11].value
         })
-    }).then(() => location.reload());
+    }).then(()=>location.reload());
 }
 
-function deleteRow(id) {
-    if (!confirm("Delete this record?")) return;
-
-    fetch("/delete/" + id, { method: "POST" })
-        .then(() => location.reload());
+function deleteRow(id){
+    fetch("/delete/"+id,{method:"POST"}).then(()=>location.reload());
 }
 
-function searchPatient() {
-    let input = document.getElementById("searchInput").value.toLowerCase();
-    let rows = document.querySelectorAll("tr[id^='row-']");
-
-    rows.forEach(row => {
-        let name = row.querySelector(".patient-name").innerText.toLowerCase();
-        row.style.display = name.includes(input) ? "" : "none";
+function searchPatient(){
+    let val = document.getElementById("searchInput").value.toLowerCase();
+    document.querySelectorAll("tr[id^='row-']").forEach(r=>{
+        let name=r.querySelector(".patient-name").innerText.toLowerCase();
+        r.style.display = name.includes(val) ? "" : "none";
     });
-}
-
-function clearSearch() {
-    document.getElementById("searchInput").value = "";
-    searchPatient();
 }
 </script>
 
