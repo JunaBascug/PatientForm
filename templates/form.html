@@ -1,177 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Patient Intake Form</title>
-
+    <title>New Patient Form</title>
     <style>
         body {
             font-family: Arial;
             background: #f5f7fb;
-            margin: 20px;
-            font-size: 13px;
+            margin: 30px;
         }
 
-        .container {
-            max-width: 900px;
-            margin: auto;
+        .box {
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+            width: 500px;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .section {
-            background: #f9f9f9;
-            padding: 12px;
-            border-radius: 8px;
-        }
-
-        h4 {
-            margin-top: 0;
-        }
-
-        label {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 4px;
-            display: block;
-        }
-
-        input {
+        input, select {
             width: 100%;
-            padding: 7px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 12px;
-            margin-bottom: 10px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 3px rgba(79,70,229,0.3);
-        }
-
-        .full {
-            grid-column: 1 / -1;
+            padding: 8px;
+            margin: 6px 0;
         }
 
         button {
-            width: 100%;
-            padding: 10px;
             background: #4CAF50;
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 10px;
+            width: 100%;
             cursor: pointer;
+            border-radius: 5px;
         }
 
-        button:hover {
-            background: #45a049;
-        }
-
-        .nav {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .nav a {
-            margin: 0 8px;
+        a {
+            display: inline-block;
+            margin-top: 10px;
+            color: #2196F3;
             text-decoration: none;
-            color: #4CAF50;
-            font-weight: bold;
         }
     </style>
 </head>
-
 <body>
 
-<div class="container">
+<h2>New Patient Form</h2>
 
-    <h2>Patient Intake Form</h2>
+<div class="box">
 
-    <form method="POST" action="/add" autocomplete="off">
+<form method="POST" action="/add">
 
-        <!-- LEFT: PATIENT INFO -->
-        <div class="section">
-            <h4>Patient Info</h4>
+    <input name="patient" placeholder="Patient Name" required>
 
-            <label>Patient Name</label>
-            <input type="text" name="patient" required autocomplete="off">
+    <select name="patient_type">
+        <option value="New">New Patient</option>
+        <option value="Existing">Existing Patient</option>
+    </select>
 
-            <label>Date of Birth</label>
-            <input type="date" name="dob" autocomplete="off">
+    <input type="date" name="dob" placeholder="DOB">
+    <input name="status" placeholder="Status">
+    <input name="work_type" placeholder="Work Type">
+    <input name="hobbies" placeholder="Hobbies">
 
-            <label>Status</label>
-            <input type="text" name="status" autocomplete="off">
+    <input name="vision_goals" placeholder="Vision Goals">
+    <input name="vision_insurance" placeholder="Vision Insurance">
 
-            <label>Work Type</label>
-            <input type="text" name="work_type" autocomplete="off">
+    <input name="medical_insurance" placeholder="Medical Insurance">
+    <input name="medical_insurance_accepted" placeholder="Insurance Accepted">
+    <input name="vsp_essential_eye_care" placeholder="VSP Eye Care">
 
-            <label>Hobbies</label>
-            <input type="text" name="hobbies" autocomplete="off">
-        </div>
+    <input name="reason" placeholder="Reason for Visit">
+    <input type="date" name="date">
 
-        <!-- RIGHT: VISIT INFO -->
-        <div class="section">
-            <h4>Visit Info</h4>
+    <button type="submit">Save Patient</button>
 
-            <label>Reason for Visit</label>
-            <input type="text" name="reason" required autocomplete="off">
+</form>
 
-            <label>Date of Visit</label>
-            <input type="date" name="date" required autocomplete="off">
-        </div>
-
-        <!-- LEFT BOTTOM: MEDICAL -->
-        <div class="section">
-            <h4>Medical</h4>
-
-            <label>Medical Insurance</label>
-            <input type="text" name="medical_insurance" autocomplete="off">
-
-            <label>Medical Insurance Accepted?</label>
-            <input type="text" name="medical_insurance_accepted" autocomplete="off">
-        </div>
-
-        <!-- RIGHT BOTTOM: VISION -->
-        <div class="section">
-            <h4>Vision</h4>
-
-            <label>Vision Goals</label>
-            <input type="text" name="vision_goals" autocomplete="off">
-
-            <label>Vision Insurance</label>
-            <input type="text" name="vision_insurance" autocomplete="off">
-
-            <label>VSP Essential Eye Care</label>
-            <input type="text" name="vsp_essential_eye_care" autocomplete="off">
-        </div>
-
-        <!-- SUBMIT -->
-        <div class="full">
-            <button type="submit">Submit Patient</button>
-        </div>
-
-    </form>
-
-    <div class="nav">
-        <a href="/">Form</a>
-        <a href="/calendar">Visit Details</a>
-    </div>
+<a href="/visitdetails">Go to Visit Details</a> |
+<a href="/dashboard">Dashboard</a>
 
 </div>
 
