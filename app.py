@@ -144,7 +144,11 @@ def add():
 
     patient_type = request.form.get('patient_type')
     if not patient_type:
-        patient_type = "Existing"  # default fallback
+        patient_type = "Existing"
+
+    date = request.form.get('date')
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d")
 
     db.execute("""
         INSERT INTO visits (
@@ -159,7 +163,7 @@ def add():
     """, (
         request.form.get('patient'),
         request.form.get('reason'),
-        request.form.get('date'),
+        date,
         request.form.get('status'),
         patient_type,
         request.form.get('dob'),
@@ -175,7 +179,7 @@ def add():
     db.commit()
     return redirect('/calendar')
 
-# ---------------- DASHBOARD STATS ----------------
+# ---------------- DASHBOARD (SAFE VERSION) ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -183,18 +187,20 @@ def dashboard():
     visits = db.execute("SELECT * FROM visits").fetchall()
 
     today = datetime.now().date()
-    week_start = today - timedelta(days=7)
-    month_start = today.replace(day=1)
-    year_start = today.replace(month=1, day=1)
+
+    def safe_date(value):
+        try:
+            return datetime.strptime(value, "%Y-%m-%d").date()
+        except:
+            return None
 
     def count(start_date):
         new = 0
         existing = 0
 
         for v in visits:
-            try:
-                d = datetime.strptime(v["date"], "%Y-%m-%d").date()
-            except:
+            d = safe_date(v["date"])
+            if not d:
                 continue
 
             if d >= start_date:
@@ -204,6 +210,10 @@ def dashboard():
                     existing += 1
 
         return new, existing
+
+    week_start = today - timedelta(days=7)
+    month_start = today.replace(day=1)
+    year_start = today.replace(month=1, day=1)
 
     day_new, day_existing = count(today)
     week_new, week_existing = count(week_start)
