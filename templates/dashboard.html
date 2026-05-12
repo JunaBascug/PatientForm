@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body {
@@ -11,22 +10,42 @@
             margin: 30px;
         }
 
-        h2 {
-            margin-bottom: 20px;
+        h2 { margin-bottom: 20px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
 
         .card {
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
         }
 
-        .nav a {
-            margin-right: 10px;
-            text-decoration: none;
-            color: #4CAF50;
+        .title {
             font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .value {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #2196F3;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -35,49 +54,39 @@
 
 <h2>Dashboard</h2>
 
-<div class="card">
-    <canvas id="chart"></canvas>
+<div class="grid">
+
+    <div class="card">
+        <div class="title">Today</div>
+        <div class="row">New <span class="value">{{ day_new }}</span></div>
+        <div class="row">Existing <span class="value">{{ day_existing }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="title">Week</div>
+        <div class="row">New <span class="value">{{ week_new }}</span></div>
+        <div class="row">Existing <span class="value">{{ week_existing }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="title">Month</div>
+        <div class="row">New <span class="value">{{ month_new }}</span></div>
+        <div class="row">Existing <span class="value">{{ month_existing }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="title">Year</div>
+        <div class="row">New <span class="value">{{ year_new }}</span></div>
+        <div class="row">Existing <span class="value">{{ year_existing }}</span></div>
+    </div>
+
 </div>
 
 <br>
 
-<div class="nav">
-    <a href="/form">New Patient</a>
-    <a href="/calendar">Visit Details</a>
-</div>
-
-<script>
-const ctx = document.getElementById('chart');
-
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Today', 'Week', 'Month', 'Year'],
-        datasets: [
-            {
-                label: 'New Patients',
-                backgroundColor: '#4CAF50',
-                data: [
-                    {{ day_new }},
-                    {{ week_new }},
-                    {{ month_new }},
-                    {{ year_new }}
-                ]
-            },
-            {
-                label: 'Existing Patients',
-                backgroundColor: '#2196F3',
-                data: [
-                    {{ day_existing }},
-                    {{ week_existing }},
-                    {{ month_existing }},
-                    {{ year_existing }}
-                ]
-            }
-        ]
-    }
-});
-</script>
+<a href="/form">New Patient</a>
+<a href="/visitdetails">Visit Details</a>
+<a href="/logout">Logout</a>
 
 </body>
 </html>
