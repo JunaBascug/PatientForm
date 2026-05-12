@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
-    SESSION_COOKIE_SECURE=False,  # ⚠️ Render fix (True can break login in some setups)
+    SESSION_COOKIE_SECURE=False,  # IMPORTANT for Render stability
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax'
 )
@@ -31,7 +31,7 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT DB ----------------
+# ---------------- INIT DB (SAFE MIGRATION) ----------------
 def init_db():
     db = get_db()
 
@@ -50,7 +50,7 @@ def init_db():
         reason TEXT,
         date TEXT,
         status TEXT,
-        patient_type TEXT,
+        patient_type TEXT DEFAULT 'Existing',
         dob TEXT,
         work_type TEXT,
         hobbies TEXT,
@@ -128,7 +128,7 @@ def root():
 def form():
     return render_template("form.html")
 
-# ---------------- VISIT DETAILS (FIXED NAME) ----------------
+# ---------------- VISIT DETAILS ----------------
 @app.route('/visitdetails')
 @login_required
 def visitdetails():
@@ -171,7 +171,7 @@ def add():
     db.commit()
     return redirect('/visitdetails')
 
-# ---------------- DASHBOARD (FIXED CALCULATION) ----------------
+# ---------------- DASHBOARD (CRASH-PROOF) ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -189,6 +189,12 @@ def dashboard():
         except:
             return None
 
+    def get_type(v):
+        try:
+            return v["patient_type"] if "patient_type" in v.keys() else "Existing"
+        except:
+            return "Existing"
+
     def count(start_date):
         new = 0
         existing = 0
@@ -199,7 +205,7 @@ def dashboard():
                 continue
 
             if d >= start_date:
-                if v["patient_type"] == "New":
+                if get_type(v) == "New":
                     new += 1
                 else:
                     existing += 1
