@@ -8,16 +8,19 @@
             font-family: Arial;
             background: #f5f7fb;
             margin: 20px;
+            font-size: 12px;
         }
 
         h2 {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .top-bar {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .btn {
@@ -26,66 +29,54 @@
             color: white;
             text-decoration: none;
             font-size: 12px;
-            margin-right: 5px;
+            border: none;
+            cursor: pointer;
         }
 
         .green { background: #4CAF50; }
         .blue { background: #2196F3; }
+        .gray { background: #777; }
 
-        /* CARD DESIGN */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 15px;
-        }
-
-        .card {
+        table {
+            width: 100%;
             background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
+            border-collapse: collapse;
         }
 
-        .name {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 8px;
+        th {
+            background: #4CAF50;
+            color: white;
+            padding: 8px;
+            text-align: left;
         }
 
-        .row {
-            margin: 4px 0;
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        input.edit-input {
+            display: none;
+            width: 95%;
+            padding: 4px;
             font-size: 12px;
         }
 
-        .label {
-            font-weight: bold;
-            color: #555;
+        .search-box {
+            display: flex;
+            gap: 5px;
         }
 
-        input {
-            width: 100%;
-            padding: 5px;
-            margin-top: 3px;
-            display: none;
+        .search-box input {
+            padding: 6px;
+            width: 220px;
         }
 
-        .actions {
-            margin-top: 10px;
-        }
-
-        .btn-small {
-            padding: 5px 8px;
+        .small-btn {
+            padding: 4px 6px;
             font-size: 11px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
         }
-
-        .edit { background: #2196F3; }
-        .save { background: #4CAF50; display: none; }
-        .cancel { background: #777; display: none; }
-        .delete { background: #f44336; }
     </style>
 </head>
 
@@ -94,96 +85,175 @@
 <h2>Visit Details</h2>
 
 <div class="top-bar">
+
+    <!-- SEARCH -->
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search Patient Name">
+        <button class="btn blue small-btn" onclick="searchPatient()">Search</button>
+        <button class="btn gray small-btn" onclick="clearSearch()">Clear</button>
+    </div>
+
+    <!-- NAV BUTTONS -->
     <div>
         <a class="btn green" href="/form">+ New Patient</a>
         <a class="btn blue" href="/dashboard">Dashboard</a>
     </div>
+
 </div>
 
-<div class="grid">
+<table>
+
+<tr>
+    <th>Patient Info</th>
+    <th>Medical Info</th>
+    <th>Vision Info</th>
+    <th>Visit</th>
+    <th>Actions</th>
+</tr>
 
 {% for d in data %}
-<div class="card" id="card-{{ d['id'] }}">
+<tr id="row-{{ d['id'] }}">
 
-    <!-- NAME -->
-    <div class="name">
+    <!-- PATIENT -->
+    <td>
+        <b>Name:</b>
         <span class="view">{{ d['patient'] }}</span>
         <input class="edit-input" value="{{ d['patient'] }}">
-    </div>
 
-    <!-- DOB -->
-    <div class="row">
-        <span class="label">DOB:</span>
+        <br><b>DOB:</b>
         <span class="view">{{ d['dob'] }}</span>
         <input class="edit-input" type="date" value="{{ d['dob'] }}">
-    </div>
 
-    <!-- STATUS -->
-    <div class="row">
-        <span class="label">Status:</span>
+        <br><b>Status:</b>
         <span class="view">{{ d['status'] }}</span>
         <input class="edit-input" value="{{ d['status'] }}">
-    </div>
 
-    <!-- WORK -->
-    <div class="row">
-        <span class="label">Work:</span>
+        <br><b>Work:</b>
         <span class="view">{{ d['work_type'] }}</span>
         <input class="edit-input" value="{{ d['work_type'] }}">
-    </div>
 
-    <!-- HOBBIES -->
-    <div class="row">
-        <span class="label">Hobbies:</span>
+        <br><b>Hobbies:</b>
         <span class="view">{{ d['hobbies'] }}</span>
         <input class="edit-input" value="{{ d['hobbies'] }}">
-    </div>
+    </td>
 
     <!-- MEDICAL -->
-    <div class="row">
-        <span class="label">Medical:</span>
+    <td>
+        <b>Medical:</b>
         <span class="view">{{ d['medical_insurance'] }}</span>
         <input class="edit-input" value="{{ d['medical_insurance'] }}">
-    </div>
+
+        <br><b>Accepted:</b>
+        <span class="view">{{ d['medical_insurance_accepted'] }}</span>
+        <input class="edit-input" value="{{ d['medical_insurance_accepted'] }}">
+    </td>
 
     <!-- VISION -->
-    <div class="row">
-        <span class="label">Vision:</span>
+    <td>
+        <b>Goals:</b>
         <span class="view">{{ d['vision_goals'] }}</span>
         <input class="edit-input" value="{{ d['vision_goals'] }}">
-    </div>
+
+        <br><b>Vision:</b>
+        <span class="view">{{ d['vision_insurance'] }}</span>
+        <input class="edit-input" value="{{ d['vision_insurance'] }}">
+
+        <br><b>VSP:</b>
+        <span class="view">{{ d['vsp_essential_eye_care'] }}</span>
+        <input class="edit-input" value="{{ d['vsp_essential_eye_care'] }}">
+    </td>
 
     <!-- VISIT -->
-    <div class="row">
-        <span class="label">Reason:</span>
+    <td>
+        <b>Reason:</b>
         <span class="view">{{ d['reason'] }}</span>
         <input class="edit-input" value="{{ d['reason'] }}">
-    </div>
 
-    <div class="row">
-        <span class="label">Date:</span>
+        <br><b>Date:</b>
         <span class="view">{{ d['date'] }}</span>
         <input class="edit-input" type="date" value="{{ d['date'] }}">
-    </div>
+    </td>
 
     <!-- ACTIONS -->
-    <div class="actions">
+    <td>
+        <button class="btn blue small-btn" onclick="editRow({{ d['id'] }})">Edit</button>
+        <button class="btn green small-btn" style="display:none;" onclick="saveRow({{ d['id'] }})">Save</button>
+        <button class="btn gray small-btn" style="display:none;" onclick="cancelRow()">Cancel</button>
+        <button class="btn small-btn" style="background:#f44336;" onclick="deleteRow({{ d['id'] }})">Delete</button>
+    </td>
 
-        <button class="btn-small edit" onclick="editCard({{ d['id'] }})">Edit</button>
-        <button class="btn-small save" onclick="saveCard({{ d['id'] }})">Save</button>
-        <button class="btn-small cancel" onclick="cancelCard()">Cancel</button>
-        <button class="btn-small delete" onclick="deleteRow({{ d['id'] }})">Delete</button>
-
-    </div>
-
-</div>
+</tr>
 {% endfor %}
 
-</div>
+</table>
 
 <script>
 
-function editCard(id) {
-    let card = document.getElementById("card-" + id);
+function editRow(id) {
+    let row = document.getElementById("row-" + id);
 
-    card.querySelectorAll(".
+    row.querySelectorAll(".view").forEach(el => el.style.display = "none");
+    row.querySelectorAll(".edit-input").forEach(el => el.style.display = "inline-block");
+
+    let btns = row.querySelectorAll("button");
+    btns[0].style.display = "none"; // edit
+    btns[1].style.display = "inline-block"; // save
+    btns[2].style.display = "inline-block"; // cancel
+}
+
+function cancelRow() {
+    location.reload();
+}
+
+function saveRow(id) {
+    let row = document.getElementById("row-" + id);
+    let inputs = row.querySelectorAll(".edit-input");
+
+    fetch("/update/" + id, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            patient: inputs[0].value,
+            dob: inputs[1].value,
+            status: inputs[2].value,
+            work_type: inputs[3].value,
+            hobbies: inputs[4].value,
+            medical_insurance: inputs[5].value,
+            medical_insurance_accepted: inputs[6].value,
+            vision_goals: inputs[7].value,
+            vision_insurance: inputs[8].value,
+            vsp_essential_eye_care: inputs[9].value,
+            reason: inputs[10].value,
+            date: inputs[11].value
+        })
+    }).then(() => location.reload());
+}
+
+function deleteRow(id) {
+    if (!confirm("Delete this record?")) return;
+
+    fetch("/delete/" + id, { method: "POST" })
+    .then(() => location.reload());
+}
+
+/* SEARCH BUTTON */
+function searchPatient() {
+    let input = document.getElementById("searchInput").value.toLowerCase();
+    let rows = document.querySelectorAll("tr[id^='row-']");
+
+    rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? "" : "none";
+    });
+}
+
+/* CLEAR SEARCH */
+function clearSearch() {
+    document.getElementById("searchInput").value = "";
+    searchPatient();
+}
+
+</script>
+
+</body>
+</html>
