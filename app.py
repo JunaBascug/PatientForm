@@ -1,9 +1,10 @@
 import os
 import sqlite3
+import json
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, session, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -17,6 +18,10 @@ app.config.update(
 )
 
 DB_NAME = "database.db"
+
+# ---------------- SHAREPOINT SYNC FOLDER ----------------
+# ⚠️ CHANGE THIS PATH to your synced SharePoint folder
+SYNC_FOLDER = r"C:\Users\YourName\EyeGenVisionTeam\Documents\Operations\Patient Form Consolidated Data\incoming_data"
 
 # ---------------- DB ----------------
 def get_db():
@@ -35,40 +40,30 @@ def close_db(error):
 def init_db():
     db = get_db()
 
-    # CREATE TABLE (base structure)
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )
+    """)
+
     db.execute("""
     CREATE TABLE IF NOT EXISTS visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         patient TEXT,
         reason TEXT,
         date TEXT,
-        status TEXT
-    )
-    """)
-
-    # ADD MISSING COLUMNS (AUTO FIX)
-    columns = [col["name"] for col in db.execute("PRAGMA table_info(visits)")]
-
-    def add_column(name):
-        if name not in columns:
-            db.execute(f"ALTER TABLE visits ADD COLUMN {name} TEXT")
-
-    add_column("patient_type")
-    add_column("dob")
-    add_column("work_type")
-    add_column("hobbies")
-    add_column("vision_goals")
-    add_column("vision_insurance")
-    add_column("medical_insurance")
-    add_column("medical_insurance_accepted")
-    add_column("vsp_essential_eye_care")
-
-    # USERS TABLE
-    db.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
+        status TEXT,
+        patient_type TEXT DEFAULT 'Existing',
+        dob TEXT,
+        work_type TEXT,
+        hobbies TEXT,
+        vision_goals TEXT,
+        vision_insurance TEXT,
+        medical_insurance TEXT,
+        medical_insurance_accepted TEXT,
+        vsp_essential_eye_care TEXT
     )
     """)
 
@@ -90,6 +85,39 @@ def init_db():
 
 with app.app_context():
     init_db()
+
+# ---------------- SHAREPOINT JSON EXPORT ----------------
+def save_to_sharepoint_folder(data, record_id):
+    try:
+        if not os.path.exists(SYNC_FOLDER):
+            os.makedirs(SYNC_FOLDER)
+
+        filename = f"patient_{record_id}_{int(datetime.now().timestamp())}.json"
+        filepath = os.path.join(SYNC_FOLDER, filename)
+
+        payload = {
+            "id": record_id,
+            "patient": data.get("patient"),
+            "dob": data.get("dob"),
+            "status": data.get("status"),
+            "work_type": data.get("work_type"),
+            "hobbies": data.get("hobbies"),
+            "vision_goals": data.get("vision_goals"),
+            "vision_insurance": data.get("vision_insurance"),
+            "medical_insurance": data.get("medical_insurance"),
+            "medical_insurance_accepted": data.get("medical_insurance_accepted"),
+            "vsp_essential_eye_care": data.get("vsp_essential_eye_care"),
+            "reason": data.get("reason"),
+            "date": data.get("date")
+        }
+
+        with open(filepath, "w") as f:
+            json.dump(payload, f)
+
+        print(f"Saved JSON for SharePoint: {filepath}")
+
+    except Exception as e:
+        print("Error saving JSON:", e)
 
 # ---------------- LOGIN REQUIRED ----------------
 def login_required(f):
@@ -143,51 +171,92 @@ def form():
 @login_required
 def visitdetails():
     db = get_db()
-    data = db.execute("SELECT * FROM visits ORDER BY id DESC").fetchall()
+    data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD (SAFE) ----------------
+# ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
-    try:
-        db = get_db()
+    db = get_db()
 
-        # SAFE VALUES (BLANK IF EMPTY)
-        patient = request.form.get('patient') or ''
-        reason = request.form.get('reason') or ''
-        date = request.form.get('date') or ''
-        status = request.form.get('status') or ''
-        patient_type = request.form.get('patient_type') or 'Existing'
-        dob = request.form.get('dob') or ''
-        work_type = request.form.get('work_type') or ''
-        hobbies = request.form.get('hobbies') or ''
-        vision_goals = request.form.get('vision_goals') or ''
-        vision_insurance = request.form.get('vision_insurance') or ''
-        medical_insurance = request.form.get('medical_insurance') or ''
-        medical_insurance_accepted = request.form.get('medical_insurance_accepted') or ''
-        vsp = request.form.get('vsp_essential_eye_care') or ''
+    db.execute("""
+        INSERT INTO visits (
+            patient, reason, date,
+            status, patient_type,
+            dob, work_type, hobbies,
+            vision_goals, vision_insurance,
+            medical_insurance, medical_insurance_accepted,
+            vsp_essential_eye_care
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        request.form.get('patient'),
+        request.form.get('reason'),
+        request.form.get('date'),
+        request.form.get('status'),
+        request.form.get('patient_type', 'Existing'),
+        request.form.get('dob'),
+        request.form.get('work_type'),
+        request.form.get('hobbies'),
+        request.form.get('vision_goals'),
+        request.form.get('vision_insurance'),
+        request.form.get('medical_insurance'),
+        request.form.get('medical_insurance_accepted'),
+        request.form.get('vsp_essential_eye_care')
+    ))
 
-        db.execute("""
-            INSERT INTO visits (
-                patient, reason, date, status, patient_type,
-                dob, work_type, hobbies, vision_goals, vision_insurance,
-                medical_insurance, medical_insurance_accepted, vsp_essential_eye_care
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            patient, reason, date, status, patient_type,
-            dob, work_type, hobbies, vision_goals, vision_insurance,
-            medical_insurance, medical_insance_accepted if 'medical_insance_accepted' in locals() else medical_insurance_accepted,
-            vsp
-        ))
+    db.commit()
 
-        db.commit()
-        return redirect('/visitdetails')
+    new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-    except Exception as e:
-        print("ERROR:", e)
-        return f"Error saving patient: {str(e)}"
+    save_to_sharepoint_folder(request.form, new_id)
+
+    return redirect('/visitdetails')
+
+# ---------------- UPDATE ----------------
+@app.route('/update/<int:id>', methods=['POST'])
+@login_required
+def update(id):
+    data = request.get_json()
+    db = get_db()
+
+    db.execute("""
+        UPDATE visits
+        SET patient=?, reason=?, date=?, status=?, dob=?,
+            work_type=?, hobbies=?, vision_goals=?, vision_insurance=?,
+            medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
+        WHERE id=?
+    """, (
+        data.get('patient'),
+        data.get('reason'),
+        data.get('date'),
+        data.get('status'),
+        data.get('dob'),
+        data.get('work_type'),
+        data.get('hobbies'),
+        data.get('vision_goals'),
+        data.get('vision_insurance'),
+        data.get('medical_insurance'),
+        data.get('medical_insurance_accepted'),
+        data.get('vsp_essential_eye_care'),
+        id
+    ))
+
+    db.commit()
+
+    save_to_sharepoint_folder(data, id)
+
+    return jsonify({"status": "success"})
+
+# ---------------- DELETE ----------------
+@app.route('/delete/<int:id>', methods=['POST'])
+@login_required
+def delete(id):
+    db = get_db()
+    db.execute("DELETE FROM visits WHERE id=?", (id,))
+    db.commit()
+    return jsonify({"status": "deleted"})
 
 # ---------------- DASHBOARD ----------------
 @app.route('/dashboard')
@@ -239,21 +308,6 @@ def dashboard():
         year_new=year_new,
         year_existing=year_existing
     )
-
-# ---------------- DELETE ----------------
-@app.route('/delete/<int:id>', methods=['POST'])
-@login_required
-def delete(id):
-    db = get_db()
-    db.execute("DELETE FROM visits WHERE id=?", (id,))
-    db.commit()
-    return jsonify({"status": "deleted"})
-
-# ---------------- SEARCH ----------------
-@app.route('/search')
-@login_required
-def search():
-    return render_template("search.html")
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
