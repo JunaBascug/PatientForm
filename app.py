@@ -7,10 +7,8 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# ---------------- SECRET ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-# IMPORTANT FOR RENDER (FIX LOGIN LOOP)
 app.config.update(
     SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_HTTPONLY=True,
@@ -129,50 +127,57 @@ def root():
 def form():
     return render_template("form.html")
 
-# ---------------- VISIT DETAILS (FIXED NAME) ----------------
+# ---------------- VISIT DETAILS ----------------
 @app.route('/visitdetails')
 @login_required
 def visitdetails():
     db = get_db()
-    data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
+    data = db.execute("SELECT * FROM visits ORDER BY id DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD ----------------
+# ---------------- ADD (FIXED) ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
-    db = get_db()
+    try:
+        db = get_db()
 
-    db.execute("""
-        INSERT INTO visits (
-            patient, reason, date,
-            status, patient_type,
-            dob, work_type, hobbies,
-            vision_goals, vision_insurance,
-            medical_insurance, medical_insurance_accepted,
-            vsp_essential_eye_care
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        request.form.get('patient'),
-        request.form.get('reason'),
-        request.form.get('date'),
-        request.form.get('status'),
-        request.form.get('patient_type', 'Existing'),
-        request.form.get('dob'),
-        request.form.get('work_type'),
-        request.form.get('hobbies'),
-        request.form.get('vision_goals'),
-        request.form.get('vision_insurance'),
-        request.form.get('medical_insurance'),
-        request.form.get('medical_insurance_accepted'),
-        request.form.get('vsp_essential_eye_care')
-    ))
+        # SAFE VALUES (avoid None crashes)
+        patient = request.form.get('patient', '')
+        reason = request.form.get('reason', '')
+        date = request.form.get('date') or datetime.now().strftime("%Y-%m-%d")
+        status = request.form.get('status', '')
+        patient_type = request.form.get('patient_type', 'Existing')
+        dob = request.form.get('dob', '')
+        work_type = request.form.get('work_type', '')
+        hobbies = request.form.get('hobbies', '')
+        vision_goals = request.form.get('vision_goals', '')
+        vision_insurance = request.form.get('vision_insurance', '')
+        medical_insurance = request.form.get('medical_insurance', '')
+        medical_insurance_accepted = request.form.get('medical_insurance_accepted', '')
+        vsp = request.form.get('vsp_essential_eye_care', '')
 
-    db.commit()
-    return redirect('/visitdetails')
+        db.execute("""
+            INSERT INTO visits (
+                patient, reason, date, status, patient_type,
+                dob, work_type, hobbies, vision_goals, vision_insurance,
+                medical_insurance, medical_insurance_accepted, vsp_essential_eye_care
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            patient, reason, date, status, patient_type,
+            dob, work_type, hobbies, vision_goals, vision_insurance,
+            medical_insurance, medical_insurance_accepted, vsp
+        ))
 
-# ---------------- DASHBOARD (SAFE) ----------------
+        db.commit()
+        return redirect('/visitdetails')
+
+    except Exception as e:
+        print("ERROR:", e)  # shows in Render logs
+        return f"Error saving patient: {str(e)}"
+
+# ---------------- DASHBOARD ----------------
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -190,9 +195,6 @@ def dashboard():
         except:
             return None
 
-    def get_type(v):
-        return v["patient_type"] if "patient_type" in v.keys() else "Existing"
-
     def count(start_date):
         new = 0
         existing = 0
@@ -203,7 +205,7 @@ def dashboard():
                 continue
 
             if d >= start_date:
-                if get_type(v) == "New":
+                if v["patient_type"] == "New":
                     new += 1
                 else:
                     existing += 1
@@ -225,38 +227,6 @@ def dashboard():
         year_new=year_new,
         year_existing=year_existing
     )
-
-# ---------------- UPDATE ----------------
-@app.route('/update/<int:id>', methods=['POST'])
-@login_required
-def update(id):
-    data = request.get_json()
-    db = get_db()
-
-    db.execute("""
-        UPDATE visits
-        SET patient=?, reason=?, date=?, status=?, dob=?,
-            work_type=?, hobbies=?, vision_goals=?, vision_insurance=?,
-            medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
-        WHERE id=?
-    """, (
-        data.get('patient'),
-        data.get('reason'),
-        data.get('date'),
-        data.get('status'),
-        data.get('dob'),
-        data.get('work_type'),
-        data.get('hobbies'),
-        data.get('vision_goals'),
-        data.get('vision_insurance'),
-        data.get('medical_insurance'),
-        data.get('medical_insurance_accepted'),
-        data.get('vsp_essential_eye_care'),
-        id
-    ))
-
-    db.commit()
-    return jsonify({"status": "success"})
 
 # ---------------- DELETE ----------------
 @app.route('/delete/<int:id>', methods=['POST'])
