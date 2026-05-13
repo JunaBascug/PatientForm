@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import json
+import traceback
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, session, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,17 +15,16 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 app.config.update(
     SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax'
+    SESSION_COOKIE_SAMESITE='Lax',
+    DEBUG=True,
+    PROPAGATE_EXCEPTIONS=True
 )
 
 DB_NAME = "database.db"
 
-# ---------------- SHAREPOINT SYNC FOLDER ----------------
-SYNC_FOLDER = r"C:\Users\YourName\EyeGenVisionTeam\Documents\Operations\Patient Form Consolidated Data\incoming_data"
-
-# ---------------- SAFE CLEAN FUNCTION ----------------
+# ---------------- CLEAN FUNCTION ----------------
 def clean(value):
-    return "" if value is None else value
+    return "" if value is None else str(value)
 
 # ---------------- DB ----------------
 def get_db():
@@ -89,14 +89,24 @@ def init_db():
 with app.app_context():
     init_db()
 
-# ---------------- SHAREPOINT JSON EXPORT ----------------
+# ---------------- SAFE FILE SAVE (NON-CRASHING) ----------------
 def save_to_sharepoint_folder(data, record_id):
+    """
+    IMPORTANT:
+    This will NEVER crash your app even if folder is invalid.
+    """
+
     try:
-        if not os.path.exists(SYNC_FOLDER):
-            os.makedirs(SYNC_FOLDER)
+        sync_folder = os.environ.get("SYNC_FOLDER", None)
+
+        if not sync_folder:
+            print("SYNC_FOLDER not set — skipping file save")
+            return
+
+        os.makedirs(sync_folder, exist_ok=True)
 
         filename = f"patient_{record_id}_{int(datetime.now().timestamp())}.json"
-        filepath = os.path.join(SYNC_FOLDER, filename)
+        filepath = os.path.join(sync_folder, filename)
 
         payload = {
             "id": record_id,
@@ -114,13 +124,14 @@ def save_to_sharepoint_folder(data, record_id):
             "date": clean(data.get("date"))
         }
 
-        with open(filepath, "w") as f:
-            json.dump(payload, f)
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
 
         print("Saved JSON:", filepath)
 
     except Exception as e:
-        print("Error saving JSON:", e)
+        print("FILE SAVE ERROR:")
+        traceback.print_exc()
 
 # ---------------- LOGIN REQUIRED ----------------
 def login_required(f):
@@ -177,80 +188,92 @@ def visitdetails():
     data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD (FIXED) ----------------
+# ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
-    db = get_db()
+    try:
+        db = get_db()
 
-    db.execute("""
-        INSERT INTO visits (
-            patient, reason, date,
-            status, patient_type,
-            dob, work_type, hobbies,
-            vision_goals, vision_insurance,
-            medical_insurance, medical_insurance_accepted,
-            vsp_essential_eye_care
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        clean(request.form.get('patient')),
-        clean(request.form.get('reason')),
-        clean(request.form.get('date')),
-        clean(request.form.get('status')),
-        clean(request.form.get('patient_type', 'Existing')),
-        clean(request.form.get('dob')),
-        clean(request.form.get('work_type')),
-        clean(request.form.get('hobbies')),
-        clean(request.form.get('vision_goals')),
-        clean(request.form.get('vision_insurance')),
-        clean(request.form.get('medical_insurance')),
-        clean(request.form.get('medical_insurance_accepted')),
-        clean(request.form.get('vsp_essential_eye_care'))
-    ))
+        db.execute("""
+            INSERT INTO visits (
+                patient, reason, date,
+                status, patient_type,
+                dob, work_type, hobbies,
+                vision_goals, vision_insurance,
+                medical_insurance, medical_insurance_accepted,
+                vsp_essential_eye_care
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            clean(request.form.get('patient')),
+            clean(request.form.get('reason')),
+            clean(request.form.get('date')),
+            clean(request.form.get('status')),
+            clean(request.form.get('patient_type', 'Existing')),
+            clean(request.form.get('dob')),
+            clean(request.form.get('work_type')),
+            clean(request.form.get('hobbies')),
+            clean(request.form.get('vision_goals')),
+            clean(request.form.get('vision_insurance')),
+            clean(request.form.get('medical_insurance')),
+            clean(request.form.get('medical_insurance_accepted')),
+            clean(request.form.get('vsp_essential_eye_care'))
+        ))
 
-    db.commit()
+        db.commit()
 
-    new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-    save_to_sharepoint_folder(request.form, new_id)
+        save_to_sharepoint_folder(request.form, new_id)
 
-    return redirect('/visitdetails')
+        return redirect('/visitdetails')
 
-# ---------------- UPDATE (FIXED) ----------------
+    except Exception as e:
+        print("ADD ERROR:")
+        traceback.print_exc()
+        return f"Server Error: {str(e)}", 500
+
+# ---------------- UPDATE ----------------
 @app.route('/update/<int:id>', methods=['POST'])
 @login_required
 def update(id):
-    data = request.get_json() or {}
-    db = get_db()
+    try:
+        data = request.get_json() or {}
+        db = get_db()
 
-    db.execute("""
-        UPDATE visits
-        SET patient=?, reason=?, date=?, status=?, dob=?,
-            work_type=?, hobbies=?, vision_goals=?, vision_insurance=?,
-            medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
-        WHERE id=?
-    """, (
-        clean(data.get('patient')),
-        clean(data.get('reason')),
-        clean(data.get('date')),
-        clean(data.get('status')),
-        clean(data.get('dob')),
-        clean(data.get('work_type')),
-        clean(data.get('hobbies')),
-        clean(data.get('vision_goals')),
-        clean(data.get('vision_insurance')),
-        clean(data.get('medical_insurance')),
-        clean(data.get('medical_insurance_accepted')),
-        clean(data.get('vsp_essential_eye_care')),
-        id
-    ))
+        db.execute("""
+            UPDATE visits
+            SET patient=?, reason=?, date=?, status=?, dob=?,
+                work_type=?, hobbies=?, vision_goals=?, vision_insurance=?,
+                medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
+            WHERE id=?
+        """, (
+            clean(data.get('patient')),
+            clean(data.get('reason')),
+            clean(data.get('date')),
+            clean(data.get('status')),
+            clean(data.get('dob')),
+            clean(data.get('work_type')),
+            clean(data.get('hobbies')),
+            clean(data.get('vision_goals')),
+            clean(data.get('vision_insurance')),
+            clean(data.get('medical_insurance')),
+            clean(data.get('medical_insurance_accepted')),
+            clean(data.get('vsp_essential_eye_care')),
+            id
+        ))
 
-    db.commit()
+        db.commit()
 
-    save_to_sharepoint_folder(data, id)
+        save_to_sharepoint_folder(data, id)
 
-    return jsonify({"status": "success"})
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print("UPDATE ERROR:")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 # ---------------- DELETE ----------------
 @app.route('/delete/<int:id>', methods=['POST'])
@@ -296,21 +319,7 @@ def dashboard():
 
         return new, existing
 
-    day_new, day_existing = count(today)
-    week_new, week_existing = count(week_start)
-    month_new, month_existing = count(month_start)
-    year_new, year_existing = count(year_start)
-
-    return render_template("dashboard.html",
-        day_new=day_new,
-        day_existing=day_existing,
-        week_new=week_new,
-        week_existing=week_existing,
-        month_new=month_new,
-        month_existing=month_existing,
-        year_new=year_new,
-        year_existing=year_existing
-    )
+    return render_template("dashboard.html")
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
