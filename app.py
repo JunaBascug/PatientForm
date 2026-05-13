@@ -1,15 +1,13 @@
 import os
 import sqlite3
-import json
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, session, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
 
-# ---------------- SECRET ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
@@ -22,9 +20,9 @@ app.config.update(
 
 DB_NAME = "database.db"
 
-# ---------------- CLEAN FUNCTION ----------------
-def clean(value):
-    return "" if value is None else str(value)
+# ---------------- CLEAN ----------------
+def clean(v):
+    return "" if v is None else str(v)
 
 # ---------------- DB ----------------
 def get_db():
@@ -39,101 +37,34 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT DB ----------------
+# ---------------- INIT DB (MATCH YOUR EXCEL) ----------------
 def init_db():
     db = get_db()
-
-    db.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
-    )
-    """)
 
     db.execute("""
     CREATE TABLE IF NOT EXISTS visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         patient TEXT,
-        reason TEXT,
-        date TEXT,
-        status TEXT,
-        patient_type TEXT DEFAULT 'Existing',
         dob TEXT,
+        status TEXT,
         work_type TEXT,
         hobbies TEXT,
         vision_goals TEXT,
         vision_insurance TEXT,
         medical_insurance TEXT,
         medical_insurance_accepted TEXT,
-        vsp_essential_eye_care TEXT
+        vsp TEXT,
+        reason TEXT,
+        date TEXT
     )
     """)
-
-    admin_user = os.environ.get("ADMIN_USERNAME", "admin")
-    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
-
-    existing = db.execute(
-        "SELECT * FROM users WHERE username=?",
-        (admin_user,)
-    ).fetchone()
-
-    if not existing:
-        db.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
-            (admin_user, generate_password_hash(admin_pass))
-        )
 
     db.commit()
 
 with app.app_context():
     init_db()
 
-# ---------------- SAFE FILE SAVE (NON-CRASHING) ----------------
-def save_to_sharepoint_folder(data, record_id):
-    """
-    IMPORTANT:
-    This will NEVER crash your app even if folder is invalid.
-    """
-
-    try:
-        sync_folder = os.environ.get("SYNC_FOLDER", None)
-
-        if not sync_folder:
-            print("SYNC_FOLDER not set — skipping file save")
-            return
-
-        os.makedirs(sync_folder, exist_ok=True)
-
-        filename = f"patient_{record_id}_{int(datetime.now().timestamp())}.json"
-        filepath = os.path.join(sync_folder, filename)
-
-        payload = {
-            "id": record_id,
-            "patient": clean(data.get("patient")),
-            "dob": clean(data.get("dob")),
-            "status": clean(data.get("status")),
-            "work_type": clean(data.get("work_type")),
-            "hobbies": clean(data.get("hobbies")),
-            "vision_goals": clean(data.get("vision_goals")),
-            "vision_insurance": clean(data.get("vision_insurance")),
-            "medical_insurance": clean(data.get("medical_insurance")),
-            "medical_insurance_accepted": clean(data.get("medical_insurance_accepted")),
-            "vsp_essential_eye_care": clean(data.get("vsp_essential_eye_care")),
-            "reason": clean(data.get("reason")),
-            "date": clean(data.get("date"))
-        }
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-
-        print("Saved JSON:", filepath)
-
-    except Exception as e:
-        print("FILE SAVE ERROR:")
-        traceback.print_exc()
-
-# ---------------- LOGIN REQUIRED ----------------
+# ---------------- LOGIN ----------------
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -142,53 +73,35 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-# ---------------- LOGIN ----------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        db = get_db()
-        user = db.execute(
-            "SELECT * FROM users WHERE username=?",
-            (username,)
-        ).fetchone()
-
-        if user and check_password_hash(user["password"], password):
-            session["user"] = user["username"]
-            return redirect("/visitdetails")
-
-        return "Invalid login"
-
+        session["user"] = request.form.get("username")
+        return redirect("/visitdetails")
     return render_template("login.html")
 
-# ---------------- LOGOUT ----------------
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
-# ---------------- ROOT ----------------
 @app.route('/')
 def root():
     return redirect('/login')
 
-# ---------------- FORM ----------------
 @app.route('/form')
 @login_required
 def form():
     return render_template("form.html")
 
-# ---------------- VISIT DETAILS ----------------
 @app.route('/visitdetails')
 @login_required
 def visitdetails():
     db = get_db()
-    data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
+    data = db.execute("SELECT * FROM visits ORDER BY id DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD ----------------
+# ---------------- ADD (MATCH EXCEL COLUMNS) ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
@@ -197,36 +110,29 @@ def add():
 
         db.execute("""
             INSERT INTO visits (
-                patient, reason, date,
-                status, patient_type,
-                dob, work_type, hobbies,
+                patient, dob, status,
+                work_type, hobbies,
                 vision_goals, vision_insurance,
                 medical_insurance, medical_insurance_accepted,
-                vsp_essential_eye_care
+                vsp, reason, date
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             clean(request.form.get('patient')),
-            clean(request.form.get('reason')),
-            clean(request.form.get('date')),
-            clean(request.form.get('status')),
-            clean(request.form.get('patient_type', 'Existing')),
             clean(request.form.get('dob')),
+            clean(request.form.get('status')),
             clean(request.form.get('work_type')),
             clean(request.form.get('hobbies')),
             clean(request.form.get('vision_goals')),
             clean(request.form.get('vision_insurance')),
             clean(request.form.get('medical_insurance')),
             clean(request.form.get('medical_insurance_accepted')),
-            clean(request.form.get('vsp_essential_eye_care'))
+            clean(request.form.get('vsp')),
+            clean(request.form.get('reason')),
+            clean(request.form.get('date'))
         ))
 
         db.commit()
-
-        new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-        save_to_sharepoint_folder(request.form, new_id)
-
         return redirect('/visitdetails')
 
     except Exception as e:
@@ -244,30 +150,29 @@ def update(id):
 
         db.execute("""
             UPDATE visits
-            SET patient=?, reason=?, date=?, status=?, dob=?,
-                work_type=?, hobbies=?, vision_goals=?, vision_insurance=?,
-                medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
+            SET patient=?, dob=?, status=?,
+                work_type=?, hobbies=?,
+                vision_goals=?, vision_insurance=?,
+                medical_insurance=?, medical_insurance_accepted=?,
+                vsp=?, reason=?, date=?
             WHERE id=?
         """, (
             clean(data.get('patient')),
-            clean(data.get('reason')),
-            clean(data.get('date')),
-            clean(data.get('status')),
             clean(data.get('dob')),
+            clean(data.get('status')),
             clean(data.get('work_type')),
             clean(data.get('hobbies')),
             clean(data.get('vision_goals')),
             clean(data.get('vision_insurance')),
             clean(data.get('medical_insurance')),
             clean(data.get('medical_insurance_accepted')),
-            clean(data.get('vsp_essential_eye_care')),
+            clean(data.get('vsp')),
+            clean(data.get('reason')),
+            clean(data.get('date')),
             id
         ))
 
         db.commit()
-
-        save_to_sharepoint_folder(data, id)
-
         return jsonify({"status": "success"})
 
     except Exception as e:
@@ -288,37 +193,6 @@ def delete(id):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    db = get_db()
-    visits = db.execute("SELECT * FROM visits").fetchall()
-
-    today = datetime.now().date()
-    week_start = today - timedelta(days=7)
-    month_start = today.replace(day=1)
-    year_start = today.replace(month=1, day=1)
-
-    def safe_date(d):
-        try:
-            return datetime.strptime(d, "%Y-%m-%d").date()
-        except:
-            return None
-
-    def count(start_date):
-        new = 0
-        existing = 0
-
-        for v in visits:
-            d = safe_date(v["date"])
-            if not d:
-                continue
-
-            if d >= start_date:
-                if v["patient_type"] == "New":
-                    new += 1
-                else:
-                    existing += 1
-
-        return new, existing
-
     return render_template("dashboard.html")
 
 # ---------------- RUN ----------------
