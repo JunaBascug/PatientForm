@@ -1,22 +1,11 @@
 import os
 import sqlite3
 import traceback
-from datetime import datetime
 from flask import Flask, render_template, request, redirect, session, jsonify, g
-from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
-
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
-
-app.config.update(
-    SESSION_COOKIE_SECURE=False,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    DEBUG=True,
-    PROPAGATE_EXCEPTIONS=True
-)
+app.secret_key = "dev-secret-key"
 
 DB_NAME = "database.db"
 
@@ -37,8 +26,8 @@ def close_db(error):
     if db:
         db.close()
 
-# ---------------- INIT DB (MATCH YOUR EXCEL) ----------------
-def init_db():
+# ---------------- AUTO FIX SCHEMA ----------------
+def migrate_db():
     db = get_db()
 
     db.execute("""
@@ -59,12 +48,35 @@ def init_db():
     )
     """)
 
+    cols = [c[1] for c in db.execute("PRAGMA table_info(visits)")]
+
+    # 🔥 ADD MISSING COLUMNS SAFELY
+    required_columns = {
+        "patient": "TEXT",
+        "dob": "TEXT",
+        "status": "TEXT",
+        "work_type": "TEXT",
+        "hobbies": "TEXT",
+        "vision_goals": "TEXT",
+        "vision_insurance": "TEXT",
+        "medical_insurance": "TEXT",
+        "medical_insurance_accepted": "TEXT",
+        "vsp": "TEXT",
+        "reason": "TEXT",
+        "date": "TEXT"
+    }
+
+    for col, col_type in required_columns.items():
+        if col not in cols:
+            print(f"Adding missing column: {col}")
+            db.execute(f"ALTER TABLE visits ADD COLUMN {col} {col_type}")
+
     db.commit()
 
 with app.app_context():
-    init_db()
+    migrate_db()
 
-# ---------------- LOGIN ----------------
+# ---------------- ROUTES ----------------
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -79,11 +91,6 @@ def login():
         session["user"] = request.form.get("username")
         return redirect("/visitdetails")
     return render_template("login.html")
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/login')
 
 @app.route('/')
 def root():
@@ -101,7 +108,7 @@ def visitdetails():
     data = db.execute("SELECT * FROM visits ORDER BY id DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD (MATCH EXCEL COLUMNS) ----------------
+# ---------------- ADD ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
@@ -189,13 +196,6 @@ def delete(id):
     db.commit()
     return jsonify({"status": "deleted"})
 
-# ---------------- DASHBOARD ----------------
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    return render_template("dashboard.html")
-
 # ---------------- RUN ----------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
