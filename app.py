@@ -20,8 +20,11 @@ app.config.update(
 DB_NAME = "database.db"
 
 # ---------------- SHAREPOINT SYNC FOLDER ----------------
-# ⚠️ CHANGE THIS PATH to your synced SharePoint folder
 SYNC_FOLDER = r"C:\Users\YourName\EyeGenVisionTeam\Documents\Operations\Patient Form Consolidated Data\incoming_data"
+
+# ---------------- SAFE CLEAN FUNCTION ----------------
+def clean(value):
+    return "" if value is None else value
 
 # ---------------- DB ----------------
 def get_db():
@@ -97,24 +100,24 @@ def save_to_sharepoint_folder(data, record_id):
 
         payload = {
             "id": record_id,
-            "patient": data.get("patient"),
-            "dob": data.get("dob"),
-            "status": data.get("status"),
-            "work_type": data.get("work_type"),
-            "hobbies": data.get("hobbies"),
-            "vision_goals": data.get("vision_goals"),
-            "vision_insurance": data.get("vision_insurance"),
-            "medical_insurance": data.get("medical_insurance"),
-            "medical_insurance_accepted": data.get("medical_insurance_accepted"),
-            "vsp_essential_eye_care": data.get("vsp_essential_eye_care"),
-            "reason": data.get("reason"),
-            "date": data.get("date")
+            "patient": clean(data.get("patient")),
+            "dob": clean(data.get("dob")),
+            "status": clean(data.get("status")),
+            "work_type": clean(data.get("work_type")),
+            "hobbies": clean(data.get("hobbies")),
+            "vision_goals": clean(data.get("vision_goals")),
+            "vision_insurance": clean(data.get("vision_insurance")),
+            "medical_insurance": clean(data.get("medical_insurance")),
+            "medical_insurance_accepted": clean(data.get("medical_insurance_accepted")),
+            "vsp_essential_eye_care": clean(data.get("vsp_essential_eye_care")),
+            "reason": clean(data.get("reason")),
+            "date": clean(data.get("date"))
         }
 
         with open(filepath, "w") as f:
             json.dump(payload, f)
 
-        print(f"Saved JSON for SharePoint: {filepath}")
+        print("Saved JSON:", filepath)
 
     except Exception as e:
         print("Error saving JSON:", e)
@@ -174,7 +177,7 @@ def visitdetails():
     data = db.execute("SELECT * FROM visits ORDER BY date DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD ----------------
+# ---------------- ADD (FIXED) ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
@@ -191,19 +194,19 @@ def add():
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        request.form.get('patient'),
-        request.form.get('reason'),
-        request.form.get('date'),
-        request.form.get('status'),
-        request.form.get('patient_type', 'Existing'),
-        request.form.get('dob'),
-        request.form.get('work_type'),
-        request.form.get('hobbies'),
-        request.form.get('vision_goals'),
-        request.form.get('vision_insurance'),
-        request.form.get('medical_insurance'),
-        request.form.get('medical_insurance_accepted'),
-        request.form.get('vsp_essential_eye_care')
+        clean(request.form.get('patient')),
+        clean(request.form.get('reason')),
+        clean(request.form.get('date')),
+        clean(request.form.get('status')),
+        clean(request.form.get('patient_type', 'Existing')),
+        clean(request.form.get('dob')),
+        clean(request.form.get('work_type')),
+        clean(request.form.get('hobbies')),
+        clean(request.form.get('vision_goals')),
+        clean(request.form.get('vision_insurance')),
+        clean(request.form.get('medical_insurance')),
+        clean(request.form.get('medical_insurance_accepted')),
+        clean(request.form.get('vsp_essential_eye_care'))
     ))
 
     db.commit()
@@ -214,11 +217,11 @@ def add():
 
     return redirect('/visitdetails')
 
-# ---------------- UPDATE ----------------
+# ---------------- UPDATE (FIXED) ----------------
 @app.route('/update/<int:id>', methods=['POST'])
 @login_required
 def update(id):
-    data = request.get_json()
+    data = request.get_json() or {}
     db = get_db()
 
     db.execute("""
@@ -228,18 +231,18 @@ def update(id):
             medical_insurance=?, medical_insurance_accepted=?, vsp_essential_eye_care=?
         WHERE id=?
     """, (
-        data.get('patient'),
-        data.get('reason'),
-        data.get('date'),
-        data.get('status'),
-        data.get('dob'),
-        data.get('work_type'),
-        data.get('hobbies'),
-        data.get('vision_goals'),
-        data.get('vision_insurance'),
-        data.get('medical_insurance'),
-        data.get('medical_insurance_accepted'),
-        data.get('vsp_essential_eye_care'),
+        clean(data.get('patient')),
+        clean(data.get('reason')),
+        clean(data.get('date')),
+        clean(data.get('status')),
+        clean(data.get('dob')),
+        clean(data.get('work_type')),
+        clean(data.get('hobbies')),
+        clean(data.get('vision_goals')),
+        clean(data.get('vision_insurance')),
+        clean(data.get('medical_insurance')),
+        clean(data.get('medical_insurance_accepted')),
+        clean(data.get('vsp_essential_eye_care')),
         id
     ))
 
