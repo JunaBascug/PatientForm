@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
+# ---------------- SECRET ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 app.config.update(
@@ -34,30 +35,40 @@ def close_db(error):
 def init_db():
     db = get_db()
 
-    db.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
-    )
-    """)
-
+    # CREATE TABLE (base structure)
     db.execute("""
     CREATE TABLE IF NOT EXISTS visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         patient TEXT,
         reason TEXT,
         date TEXT,
-        status TEXT,
-        patient_type TEXT DEFAULT 'Existing',
-        dob TEXT,
-        work_type TEXT,
-        hobbies TEXT,
-        vision_goals TEXT,
-        vision_insurance TEXT,
-        medical_insurance TEXT,
-        medical_insurance_accepted TEXT,
-        vsp_essential_eye_care TEXT
+        status TEXT
+    )
+    """)
+
+    # ADD MISSING COLUMNS (AUTO FIX)
+    columns = [col["name"] for col in db.execute("PRAGMA table_info(visits)")]
+
+    def add_column(name):
+        if name not in columns:
+            db.execute(f"ALTER TABLE visits ADD COLUMN {name} TEXT")
+
+    add_column("patient_type")
+    add_column("dob")
+    add_column("work_type")
+    add_column("hobbies")
+    add_column("vision_goals")
+    add_column("vision_insurance")
+    add_column("medical_insurance")
+    add_column("medical_insurance_accepted")
+    add_column("vsp_essential_eye_care")
+
+    # USERS TABLE
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
     )
     """)
 
@@ -135,27 +146,27 @@ def visitdetails():
     data = db.execute("SELECT * FROM visits ORDER BY id DESC").fetchall()
     return render_template("visitdetails.html", data=data)
 
-# ---------------- ADD (FIXED) ----------------
+# ---------------- ADD (SAFE) ----------------
 @app.route('/add', methods=['POST'])
 @login_required
 def add():
     try:
         db = get_db()
 
-        # SAFE VALUES (avoid None crashes)
-        patient = request.form.get('patient', '')
-        reason = request.form.get('reason', '')
-        date = request.form.get('date') or datetime.now().strftime("%Y-%m-%d")
-        status = request.form.get('status', '')
-        patient_type = request.form.get('patient_type', 'Existing')
-        dob = request.form.get('dob', '')
-        work_type = request.form.get('work_type', '')
-        hobbies = request.form.get('hobbies', '')
-        vision_goals = request.form.get('vision_goals', '')
-        vision_insurance = request.form.get('vision_insurance', '')
-        medical_insurance = request.form.get('medical_insurance', '')
-        medical_insurance_accepted = request.form.get('medical_insurance_accepted', '')
-        vsp = request.form.get('vsp_essential_eye_care', '')
+        # SAFE VALUES (BLANK IF EMPTY)
+        patient = request.form.get('patient') or ''
+        reason = request.form.get('reason') or ''
+        date = request.form.get('date') or ''
+        status = request.form.get('status') or ''
+        patient_type = request.form.get('patient_type') or 'Existing'
+        dob = request.form.get('dob') or ''
+        work_type = request.form.get('work_type') or ''
+        hobbies = request.form.get('hobbies') or ''
+        vision_goals = request.form.get('vision_goals') or ''
+        vision_insurance = request.form.get('vision_insurance') or ''
+        medical_insurance = request.form.get('medical_insurance') or ''
+        medical_insurance_accepted = request.form.get('medical_insurance_accepted') or ''
+        vsp = request.form.get('vsp_essential_eye_care') or ''
 
         db.execute("""
             INSERT INTO visits (
@@ -167,14 +178,15 @@ def add():
         """, (
             patient, reason, date, status, patient_type,
             dob, work_type, hobbies, vision_goals, vision_insurance,
-            medical_insurance, medical_insurance_accepted, vsp
+            medical_insurance, medical_insance_accepted if 'medical_insance_accepted' in locals() else medical_insurance_accepted,
+            vsp
         ))
 
         db.commit()
         return redirect('/visitdetails')
 
     except Exception as e:
-        print("ERROR:", e)  # shows in Render logs
+        print("ERROR:", e)
         return f"Error saving patient: {str(e)}"
 
 # ---------------- DASHBOARD ----------------
