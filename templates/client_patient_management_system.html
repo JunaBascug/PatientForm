@@ -1,0 +1,394 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:15px;color:var(--color-text-primary);background:transparent}
+.tabs{display:flex;gap:2px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.5rem;padding:0}
+.tab{padding:10px 18px;font-size:14px;cursor:pointer;border:none;background:none;color:var(--color-text-secondary);border-bottom:2px solid transparent;transition:all .15s;font-family:var(--font-sans)}
+.tab.active{color:var(--color-text-primary);border-bottom:2px solid #185FA5;font-weight:500}
+.tab:hover:not(.active){color:var(--color-text-primary);background:var(--color-background-secondary)}
+.panel{display:none}.panel.active{display:block}
+.section-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:1.5rem 0 .75rem;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;color:var(--color-text-secondary)}
+.field input,.field select,.field textarea{font-family:var(--font-sans);font-size:14px;padding:8px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);outline:none;transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#185FA5;box-shadow:0 0 0 2px rgba(24,95,165,.15)}
+.field textarea{resize:vertical;min-height:70px}
+.radio-group,.check-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.radio-group label,.check-group label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 12px;border:0.5px solid var(--color-border-secondary);border-radius:20px;background:var(--color-background-primary);transition:all .15s}
+.radio-group label:has(input:checked),.check-group label:has(input:checked){background:var(--color-background-info);border-color:#185FA5;color:var(--color-text-info)}
+.radio-group input,.check-group input{display:none}
+.btn-primary{background:#185FA5;color:#fff;border:none;padding:10px 24px;border-radius:var(--border-radius-md);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-sans);transition:background .15s}
+.btn-primary:hover{background:#0C447C}
+.btn-secondary{background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);padding:10px 24px;border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.btn-secondary:hover{background:var(--color-background-secondary)}
+.form-actions{display:flex;gap:10px;margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid var(--color-border-tertiary)}
+.toast{display:none;padding:10px 16px;background:#0F6E56;color:#E1F5EE;border-radius:var(--border-radius-md);font-size:13px;margin-bottom:1rem;align-items:center;gap:8px}
+.toast.show{display:flex}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary);width:30px;height:30px;border-radius:var(--border-radius-md);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font-sans)}
+.cal-nav button:hover{background:var(--color-background-primary)}
+.cal-month-label{font-size:16px;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-name{font-size:11px;color:var(--color-text-secondary);text-align:center;padding:4px 0;font-weight:500}
+.cal-day{min-height:68px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px;cursor:pointer;transition:background .1s;position:relative;background:var(--color-background-primary)}
+.cal-day:hover{background:var(--color-background-secondary)}
+.cal-day.today{border-color:#185FA5;background:var(--color-background-info)}
+.cal-day.other-month{opacity:.4}
+.cal-day .day-num{font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+.cal-day.today .day-num{color:#185FA5}
+.appt-dot{font-size:10px;margin-top:2px;padding:2px 5px;border-radius:10px;display:inline-block;line-height:1.4}
+.appt-dot.new{background:#EAF3DE;color:#3B6D11}
+.appt-dot.existing{background:#E6F1FB;color:#185FA5}
+.appt-modal{display:none;position:absolute;z-index:100;top:100%;left:0;min-width:220px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:12px;box-shadow:none}
+.cal-day:hover .appt-modal{display:block}
+.appt-item{padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.appt-item:last-child{border-bottom:none}
+.appt-item .name{font-weight:500}
+.appt-item .time{color:var(--color-text-secondary)}
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+.metric-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px;text-align:center}
+.metric-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500}
+.metric-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.chart-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.chart-title{font-size:14px;font-weight:500;margin-bottom:1rem}
+.legend{display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:var(--color-text-secondary)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+.view-toggle{display:flex;gap:4px;background:var(--color-background-secondary);padding:3px;border-radius:var(--border-radius-md);width:fit-content}
+.view-btn{padding:5px 12px;font-size:12px;border:none;background:none;border-radius:6px;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s}
+.view-btn.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border:0.5px solid var(--color-border-secondary)}
+.dash-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+</style>
+<h2 class="sr-only">Clinic Patient Management System — Patient Info Form, Appointment Calendar, and Dashboard</h2>
+
+<div style="padding:1rem 0">
+<nav class="tabs">
+  <button class="tab active" onclick="switchTab('patient')"><i class="ti ti-user-plus" aria-hidden="true"></i> Patient Info</button>
+  <button class="tab" onclick="switchTab('calendar')"><i class="ti ti-calendar" aria-hidden="true"></i> Appointments</button>
+  <button class="tab" onclick="switchTab('dashboard')"><i class="ti ti-chart-bar" aria-hidden="true"></i> Dashboard</button>
+</nav>
+
+<div id="tab-patient" class="panel active">
+  <div id="form-toast" class="toast"><i class="ti ti-check" aria-hidden="true"></i> Patient record saved successfully!</div>
+  
+  <div class="section-title">Patient type</div>
+  <div class="field">
+    <div class="radio-group">
+      <label><input type="radio" name="patient_type" value="new" checked> New Patient</label>
+      <label><input type="radio" name="patient_type" value="existing"> Existing Patient</label>
+    </div>
+  </div>
+
+  <div class="section-title">Personal information</div>
+  <div class="grid-3">
+    <div class="field"><label>Last name *</label><input type="text" id="last_name" placeholder="Dela Cruz"></div>
+    <div class="field"><label>First name *</label><input type="text" id="first_name" placeholder="Juan"></div>
+    <div class="field"><label>Middle name</label><input type="text" id="middle_name" placeholder="Santos"></div>
+  </div>
+  <div class="grid-3" style="margin-top:12px">
+    <div class="field"><label>Date of birth *</label><input type="date" id="dob"></div>
+    <div class="field"><label>Age</label><input type="number" id="age" placeholder="35" min="0" max="120"></div>
+    <div class="field"><label>Sex *</label>
+      <select id="sex"><option value="">Select</option><option>Male</option><option>Female</option></select>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:12px">
+    <div class="field"><label>Civil status</label>
+      <select id="civil_status"><option value="">Select</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option></select>
+    </div>
+    <div class="field"><label>Nationality</label><input type="text" id="nationality" placeholder="Filipino"></div>
+  </div>
+
+  <div class="section-title">Contact details</div>
+  <div class="grid-2">
+    <div class="field"><label>Mobile number *</label><input type="tel" id="mobile" placeholder="+63 917 000 0000"></div>
+    <div class="field"><label>Email address</label><input type="email" id="email" placeholder="juan@email.com"></div>
+  </div>
+  <div class="field" style="margin-top:12px"><label>Complete address</label><input type="text" id="address" placeholder="Street, Barangay, City/Municipality, Province"></div>
+
+  <div class="section-title">Visit details</div>
+  <div class="grid-2">
+    <div class="field"><label>Preferred appointment date *</label><input type="date" id="appt_date"></div>
+    <div class="field"><label>Preferred time</label>
+      <select id="appt_time"><option value="">Select</option><option>8:00 AM</option><option>8:30 AM</option><option>9:00 AM</option><option>9:30 AM</option><option>10:00 AM</option><option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option><option>1:00 PM</option><option>1:30 PM</option><option>2:00 PM</option><option>2:30 PM</option><option>3:00 PM</option><option>3:30 PM</option><option>4:00 PM</option></select>
+    </div>
+  </div>
+  <div class="field" style="margin-top:12px"><label>Reason for visit / chief complaint *</label><textarea id="complaint" placeholder="Describe the main reason for the consultation..."></textarea></div>
+  <div class="field" style="margin-top:12px"><label>Doctor / physician</label>
+    <select id="doctor"><option value="">Select physician</option><option>Dr. Santos</option><option>Dr. Reyes</option><option>Dr. Cruz</option><option>Dr. Garcia</option></select>
+  </div>
+
+  <div class="section-title">Medical history</div>
+  <div class="field"><label>Known allergies</label><input type="text" id="allergies" placeholder="e.g. Penicillin, Sulfa drugs, None"></div>
+  <div class="field" style="margin-top:12px"><label>Current medications</label><textarea id="medications" placeholder="List current medications, dosage, and frequency..."></textarea></div>
+  <div class="field" style="margin-top:12px"><label>Past medical history / diagnosis</label><textarea id="past_history" placeholder="Previous illnesses, surgeries, hospitalizations..."></textarea></div>
+  <div class="field" style="margin-top:12px"><label>Family medical history</label><textarea id="family_history" placeholder="Known hereditary conditions, illnesses in immediate family..."></textarea></div>
+
+  <div class="section-title">Insurance / HMO</div>
+  <div class="grid-2">
+    <div class="field"><label>HMO / insurance provider</label><input type="text" id="hmo" placeholder="e.g. Maxicare, Medicard, PhilHealth"></div>
+    <div class="field"><label>Member / card ID</label><input type="text" id="hmo_id" placeholder="Card number"></div>
+  </div>
+
+  <div class="section-title">Emergency contact</div>
+  <div class="grid-3">
+    <div class="field"><label>Contact person</label><input type="text" id="ec_name" placeholder="Full name"></div>
+    <div class="field"><label>Relationship</label><input type="text" id="ec_rel" placeholder="e.g. Spouse, Parent"></div>
+    <div class="field"><label>Contact number</label><input type="tel" id="ec_phone" placeholder="+63 917 000 0000"></div>
+  </div>
+
+  <div class="section-title">Consent</div>
+  <div class="check-group">
+    <label><input type="checkbox" id="consent_data"> I consent to the collection and processing of my personal data</label>
+    <label><input type="checkbox" id="consent_treatment"> I consent to examination and treatment</label>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn-primary" onclick="savePatient()"><i class="ti ti-device-floppy" aria-hidden="true"></i> Save patient record</button>
+    <button class="btn-secondary" onclick="clearForm()">Clear form</button>
+  </div>
+</div>
+
+<div id="tab-calendar" class="panel">
+  <div class="cal-header">
+    <div class="cal-month-label" id="cal-label"></div>
+    <div class="cal-nav">
+      <button onclick="changeMonth(-1)"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+      <button onclick="changeMonth(0)" style="width:auto;padding:0 10px;font-size:13px">Today</button>
+      <button onclick="changeMonth(1)"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--color-text-secondary)">
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#EAF3DE;border-radius:3px;display:inline-block"></span>New patient</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#E6F1FB;border-radius:3px;display:inline-block"></span>Existing patient</span>
+  </div>
+</div>
+
+<div id="tab-dashboard" class="panel">
+  <div class="dash-top">
+    <div style="font-size:15px;font-weight:500">Patient analytics</div>
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="setView('day',this)">Today</button>
+      <button class="view-btn" onclick="setView('week',this)">This week</button>
+      <button class="view-btn" onclick="setView('month',this)">This month</button>
+      <button class="view-btn" onclick="setView('year',this)">Monthly</button>
+      <button class="view-btn" onclick="setView('allyears',this)">Year</button>
+    </div>
+  </div>
+  <div class="metric-grid" id="metric-grid"></div>
+  <div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <div class="chart-title" id="chart-title">Today's patients</div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#185FA5"></span>New</span>
+        <span><span class="legend-dot" style="background:#639922"></span>Existing</span>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:260px"><canvas id="mainChart" role="img" aria-label="Bar chart showing new vs existing patient counts"></canvas></div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+var appointments = [
+  {date:'2026-05-13',name:'Maria Santos',time:'9:00 AM',type:'new'},
+  {date:'2026-05-13',name:'Jose Reyes',time:'10:00 AM',type:'existing'},
+  {date:'2026-05-13',name:'Ana Cruz',time:'11:00 AM',type:'new'},
+  {date:'2026-05-13',name:'Pedro Lim',time:'2:00 PM',type:'existing'},
+  {date:'2026-05-13',name:'Rosa Dela Cruz',time:'3:00 PM',type:'new'},
+  {date:'2026-05-14',name:'Carlo Bautista',time:'9:00 AM',type:'existing'},
+  {date:'2026-05-14',name:'Lea Mendoza',time:'10:30 AM',type:'new'},
+  {date:'2026-05-15',name:'Andy Torres',time:'2:00 PM',type:'existing'},
+  {date:'2026-05-15',name:'Carla Ramos',time:'3:30 PM',type:'new'},
+  {date:'2026-05-07',name:'Ben Garcia',time:'9:00 AM',type:'new'},
+  {date:'2026-05-07',name:'Sol Flores',time:'11:00 AM',type:'existing'},
+  {date:'2026-05-06',name:'Kim Aquino',time:'10:00 AM',type:'new'},
+  {date:'2026-05-05',name:'Pat Villanueva',time:'9:30 AM',type:'existing'},
+  {date:'2026-05-01',name:'Luis Castillo',time:'9:00 AM',type:'new'},
+  {date:'2026-05-03',name:'Nena Ocampo',time:'2:00 PM',type:'existing'},
+  {date:'2026-04-15',name:'Rick Santos',time:'10:00 AM',type:'new'},
+  {date:'2026-03-20',name:'Vicky Hernandez',time:'9:00 AM',type:'existing'},
+  {date:'2026-02-10',name:'Romy Pascual',time:'11:00 AM',type:'new'},
+  {date:'2026-01-18',name:'Elsie Navarro',time:'10:00 AM',type:'existing'},
+  {date:'2025-12-05',name:'Boy Santiago',time:'9:00 AM',type:'new'},
+  {date:'2025-11-20',name:'Dely Aguilar',time:'2:00 PM',type:'existing'},
+  {date:'2025-10-14',name:'Cory Tolentino',time:'10:30 AM',type:'new'},
+  {date:'2025-09-09',name:'Danny Magno',time:'9:00 AM',type:'existing'},
+  {date:'2025-08-03',name:'Fely Bartolome',time:'11:00 AM',type:'new'},
+  {date:'2025-05-22',name:'Greg Jimenez',time:'9:30 AM',type:'existing'},
+  {date:'2024-05-10',name:'Helen Macapagal',time:'10:00 AM',type:'new'},
+  {date:'2024-03-15',name:'Ike Buenaventura',time:'11:00 AM',type:'existing'},
+  {date:'2023-07-20',name:'Jules Coronel',time:'9:00 AM',type:'new'},
+  {date:'2023-02-14',name:'Kate Monsod',time:'2:30 PM',type:'existing'},
+];
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('active',['patient','calendar','dashboard'][i]===t)});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='calendar')renderCalendar();
+  if(t==='dashboard')renderDashboard('day');
+}
+
+function savePatient(){
+  var ln=document.getElementById('last_name').value.trim();
+  var fn=document.getElementById('first_name').value.trim();
+  var dob=document.getElementById('dob').value;
+  var sex=document.getElementById('sex').value;
+  var mobile=document.getElementById('mobile').value.trim();
+  var complaint=document.getElementById('complaint').value.trim();
+  var date=document.getElementById('appt_date').value;
+  if(!ln||!fn||!dob||!sex||!mobile||!complaint||!date){alert('Please fill in all required fields (*).');return;}
+  var type=document.querySelector('input[name="patient_type"]:checked').value;
+  var time=document.getElementById('appt_time').value||'TBD';
+  appointments.push({date:date,name:fn+' '+ln,time:time,type:type});
+  var t=document.getElementById('form-toast');
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show')},3000);
+}
+
+function clearForm(){
+  document.querySelectorAll('#tab-patient input:not([type=radio]):not([type=checkbox]),#tab-patient select,#tab-patient textarea').forEach(function(e){e.value='';});
+}
+
+var calYear=2026,calMonth=4;
+var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function renderCalendar(){
+  document.getElementById('cal-label').textContent=months[calMonth]+' '+calYear;
+  var grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  days.forEach(function(d){var el=document.createElement('div');el.className='cal-day-name';el.textContent=d;grid.appendChild(el);});
+  var first=new Date(calYear,calMonth,1).getDay();
+  var last=new Date(calYear,calMonth+1,0).getDate();
+  var prevLast=new Date(calYear,calMonth,0).getDate();
+  var today=new Date();
+  for(var i=0;i<42;i++){
+    var cell=document.createElement('div');
+    cell.className='cal-day';
+    var day,mo=calMonth,yr=calYear,other=false;
+    if(i<first){day=prevLast-first+i+1;mo=calMonth-1;other=true;if(mo<0){mo=11;yr=calYear-1;}}
+    else if(i>=first+last){day=i-first-last+1;mo=calMonth+1;other=true;if(mo>11){mo=0;yr=calYear+1;}}
+    else{day=i-first+1;}
+    if(other)cell.classList.add('other-month');
+    var dateStr=yr+'-'+(mo<9?'0'+(mo+1):mo+1)+'-'+(day<10?'0'+day:day);
+    if(!other&&yr===today.getFullYear()&&mo===today.getMonth()&&day===today.getDate())cell.classList.add('today');
+    cell.innerHTML='<div class="day-num">'+day+'</div>';
+    var dayAppts=appointments.filter(function(a){return a.date===dateStr});
+    if(dayAppts.length){
+      dayAppts.slice(0,2).forEach(function(a){
+        var dot=document.createElement('div');
+        dot.className='appt-dot '+(a.type==='new'?'new':'existing');
+        dot.textContent=a.name.split(' ')[0];
+        cell.appendChild(dot);
+      });
+      if(dayAppts.length>2){var more=document.createElement('div');more.className='appt-dot';more.style.background='var(--color-background-secondary)';more.style.color='var(--color-text-secondary)';more.textContent='+'+( dayAppts.length-2)+' more';cell.appendChild(more);}
+      var modal=document.createElement('div');
+      modal.className='appt-modal';
+      dayAppts.forEach(function(a){
+        modal.innerHTML+='<div class="appt-item"><div class="name">'+a.name+'</div><div class="time">'+a.time+' &bull; <span style="color:'+(a.type==='new'?'#3B6D11':'#185FA5')+'">'+a.type+'</span></div></div>';
+      });
+      cell.appendChild(modal);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function changeMonth(d){
+  if(d===0){calYear=2026;calMonth=4;}
+  else{calMonth+=d;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}}
+  renderCalendar();
+}
+
+var chartInst=null;
+var currentView='day';
+
+function setView(v,btn){
+  currentView=v;
+  document.querySelectorAll('.view-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+  renderDashboard(v);
+}
+
+function count(arr,type){return arr.filter(function(a){return a.type===type}).length;}
+
+function renderDashboard(v){
+  var today=new Date('2026-05-13');
+  var todayStr='2026-05-13';
+  var labels=[],newData=[],existData=[],title='',totalNew=0,totalExist=0;
+
+  if(v==='day'){
+    title="Today's patients";
+    var ta=appointments.filter(function(a){return a.date===todayStr});
+    var hours=['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM'];
+    labels=hours;
+    newData=hours.map(function(h){return ta.filter(function(a){return a.time&&a.time.includes(h.replace('AM',' AM').replace('PM',' PM'))&&a.type==='new'}).length});
+    existData=hours.map(function(h){return ta.filter(function(a){return a.time&&a.time.includes(h.replace('AM',' AM').replace('PM',' PM'))&&a.type==='existing'}).length});
+    totalNew=count(ta,'new');totalExist=count(ta,'existing');
+  } else if(v==='week'){
+    title='This week\'s patients';
+    for(var i=0;i<7;i++){var d=new Date(today);d.setDate(today.getDate()-today.getDay()+i);var ds=d.toISOString().slice(0,10);var wa=appointments.filter(function(a){return a.date===ds});labels.push(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]);newData.push(count(wa,'new'));existData.push(count(wa,'existing'));}
+    totalNew=newData.reduce(function(a,b){return a+b},0);totalExist=existData.reduce(function(a,b){return a+b},0);
+  } else if(v==='month'){
+    title='This month\'s patients by week';
+    var wks=['Wk 1\n(1-7)','Wk 2\n(8-14)','Wk 3\n(15-21)','Wk 4\n(22-28)','Wk 5\n(29+)'];
+    wks.forEach(function(w,wi){
+      var wStart=wi*7+1,wEnd=Math.min(wStart+6,31);
+      var wa=appointments.filter(function(a){var d=parseInt(a.date.slice(8));return a.date.slice(0,7)==='2026-05'&&d>=wStart&&d<=wEnd});
+      labels.push('Wk '+(wi+1));newData.push(count(wa,'new'));existData.push(count(wa,'existing'));
+    });
+    totalNew=newData.reduce(function(a,b){return a+b},0);totalExist=existData.reduce(function(a,b){return a+b},0);
+  } else if(v==='year'){
+    title='2026 — monthly patients';
+    ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach(function(m,mi){
+      var prefix='2026-'+(mi<9?'0'+(mi+1):mi+1);
+      var ma=appointments.filter(function(a){return a.date.startsWith(prefix)});
+      labels.push(m);newData.push(count(ma,'new'));existData.push(count(ma,'existing'));
+    });
+    totalNew=newData.reduce(function(a,b){return a+b},0);totalExist=existData.reduce(function(a,b){return a+b},0);
+  } else if(v==='allyears'){
+    title='Year-over-year patients';
+    var yrs=[2023,2024,2025,2026];
+    yrs.forEach(function(yr){
+      var ya=appointments.filter(function(a){return a.date.startsWith(yr+'')});
+      labels.push(yr+'');newData.push(count(ya,'new'));existData.push(count(ya,'existing'));
+    });
+    totalNew=newData.reduce(function(a,b){return a+b},0);totalExist=existData.reduce(function(a,b){return a+b},0);
+  }
+
+  document.getElementById('chart-title').textContent=title;
+  var mg=document.getElementById('metric-grid');
+  mg.innerHTML='<div class="metric-card"><div class="metric-label">New patients</div><div class="metric-value" style="color:#185FA5">'+totalNew+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Existing patients</div><div class="metric-value" style="color:#3B6D11">'+totalExist+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Total visits</div><div class="metric-value">'+(totalNew+totalExist)+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">New rate</div><div class="metric-value">'+((totalNew+totalExist)>0?Math.round(totalNew/(totalNew+totalExist)*100):0)+'%</div><div class="metric-sub">of total</div></div>';
+
+  if(chartInst){chartInst.destroy();}
+  var ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'New',data:newData,backgroundColor:'#185FA5',borderRadius:4,borderSkipped:false},
+        {label:'Existing',data:existData,backgroundColor:'#639922',borderRadius:4,borderSkipped:false}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y}}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:12},autoSkip:false}},
+        y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:12},stepSize:1,precision:0}}
+      }
+    }
+  });
+}
+</script>
